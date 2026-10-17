@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { EnrolmentStatus } from "@/generated/prisma/enums";
-import { canTransition } from "./status";
+import { canTransition, requiresReason } from "./status";
+
+describe("requiresReason", () => {
+  it("is needed only for re-admission", () => {
+    expect(requiresReason("WITHDRAWN", "ENROLLED")).toBe(true);
+    expect(requiresReason("DEFERRED", "ENROLLED")).toBe(false);
+    expect(requiresReason("ENROLLED", "WITHDRAWN")).toBe(false);
+  });
+});
 
 describe("canTransition", () => {
   it.each<[EnrolmentStatus, EnrolmentStatus]>([
