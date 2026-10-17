@@ -28,6 +28,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 {user.role === "STUDENT" ? "My dashboard" : "Dashboard"}
               </Link>
             )}
+            {(user?.role === "REGISTRY_ADMIN" || user?.role === "STAFF") && (
+              <Link
+                href="/staff/assessments"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Assessments
+              </Link>
+            )}
             {user?.role === "STUDENT" && (
               <Link href="/student/fees" className="text-muted-foreground hover:text-foreground">
                 Fees
