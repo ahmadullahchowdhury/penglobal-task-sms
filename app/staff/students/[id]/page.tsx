@@ -1,17 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
+import { FeesView } from "@/components/fees-view";
 import { StatusChangeDialog } from "@/components/status-change-dialog";
 import { requirePageRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { allowedTransitions, requiresReason, statusLabel } from "@/lib/domain/status";
 import { academicYearLabel, formatDate, formatDateTime } from "@/lib/format";
+import { getFees } from "@/lib/services/fees";
+import { cn } from "@/lib/utils";
 
 export default async function StudentDetailPage({
   params,
+  searchParams,
 }: PageProps<"/staff/students/[id]">) {
   await requirePageRole("REGISTRY_ADMIN");
   const { id } = await params;
+  const { tab } = await searchParams;
+  const activeTab = tab === "fees" ? "fees" : "details";
 
   const student = await prisma.student.findUnique({
     where: { id },
@@ -61,6 +67,33 @@ export default async function StudentDetailPage({
         </div>
       </div>
 
+      <nav className="flex gap-1 border-b border-border text-sm">
+        {(
+          [
+            ["details", "Details", `/staff/students/${student.id}`],
+            ["fees", "Fees", `/staff/students/${student.id}?tab=fees`],
+          ] as const
+        ).map(([key, label, href]) => (
+          <Link
+            key={key}
+            href={href}
+            aria-current={activeTab === key ? "page" : undefined}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2",
+              activeTab === key
+                ? "border-foreground font-medium"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {activeTab === "fees" ? (
+        <FeesView fees={await getFees(student.id)} canManage />
+      ) : (
+        <>
       <dl className="grid max-w-xl grid-cols-[10rem_1fr] gap-x-4 gap-y-2 text-sm">
         {details.map(([label, value]) => (
           <div key={label} className="contents">
@@ -88,6 +121,8 @@ export default async function StudentDetailPage({
           ))}
         </ol>
       </section>
+        </>
+      )}
     </div>
   );
 }
