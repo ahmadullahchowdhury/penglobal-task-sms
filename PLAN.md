@@ -18,8 +18,16 @@ Create `CLAUDE.md` (or your tool's equivalent) in Phase 0 with this content:
 
 ```
 # Project rules
-Stack: Next.js 14+ App Router, TypeScript, PostgreSQL, Prisma, Tailwind, shadcn/ui, Zod, Vitest.
+Stack: Next.js 16 App Router, TypeScript, PostgreSQL, Prisma 7, Tailwind, shadcn/ui, Zod, Vitest. Node 20.9+.
 Always read DECISIONS.md and prisma/schema.prisma before changing anything.
+
+Versions (do not write older patterns):
+- Next.js 16: cookies(), headers() and route params are async and must be awaited. No middleware.ts.
+- Prisma 7: the generator is "prisma-client" with an output path (generated/prisma). The datasource URL
+  lives in prisma.config.ts, not in schema.prisma. Prisma Client is created with the @prisma/adapter-pg
+  driver adapter and imported from the generated folder, not from "@prisma/client". .env is loaded
+  explicitly with dotenv. Do not assume migrate runs generate or seed; use the npm scripts
+  db:generate, db:migrate, db:seed and db:reset.
 
 Conventions:
 - Business rules live in pure functions in lib/domain (balance, overdue, classification,
@@ -60,9 +68,9 @@ Conventions:
 **Note on Docker:** the assessment does not require it. It only asks for PostgreSQL with Prisma, a `.env.example`, and a README explaining how to run locally. The compose file is optional and the README must not depend on it.
 
 **Prompt to agent:**
-> Set up a Next.js 14+ App Router project with TypeScript and Tailwind in this folder. Add shadcn/ui, Prisma, Zod and Vitest. Add a `.env.example` containing `DATABASE_URL` and a proper `.gitignore` (node_modules, .env, uploads). Also add an optional `docker-compose.yml` with a Postgres service, purely as a convenience for anyone who wants it; the app must work with any Postgres reachable through `DATABASE_URL`. Place my existing `DECISIONS.md`, `PLAN.md` and `schema.prisma` (into `prisma/schema.prisma`). Create `CLAUDE.md` from the rules in PLAN.md. Do not build any features.
+> Set up a Next.js 16 App Router project (Node 20.9+) with TypeScript and Tailwind in this folder. Add shadcn/ui, Zod and Vitest. Add Prisma 7 with the PostgreSQL driver adapter: install `prisma@7`, `@prisma/client@7`, `@prisma/adapter-pg`, `pg`, `dotenv` and `tsx`, and follow the official Prisma 7 upgrade guide (https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-to-prisma-7). Create `prisma.config.ts` at the project root that loads dotenv, points at `prisma/schema.prisma`, reads the datasource URL from `DATABASE_URL`, and sets the seed command to `tsx prisma/seed.ts`. Add npm scripts `db:generate`, `db:migrate`, `db:seed` and `db:reset` that run each Prisma step explicitly (do not rely on migrate to generate the client or run the seed). Add a `.env.example` containing `DATABASE_URL` and a proper `.gitignore` (node_modules, .env, uploads, generated/prisma). Also add an optional `docker-compose.yml` with a Postgres service, purely as a convenience for anyone who wants it; the app must work with any Postgres reachable through `DATABASE_URL`. Place my existing `DECISIONS.md`, `PLAN.md` and `schema.prisma` (into `prisma/schema.prisma`). Create `CLAUDE.md` from the rules in PLAN.md. Do not build any features.
 
-**Done when:** `npm run dev` shows the default page, Postgres is reachable through `DATABASE_URL` (local install, Docker, or a hosted free tier), and `.env` is ignored.
+**Done when:** `npm run dev` shows the default page, Postgres is reachable through `DATABASE_URL` (local install, Docker, or a hosted free tier), `npx prisma validate` passes, and `.env` is ignored.
 
 **Commits:**
 1. `docs: add decisions, plan and agent rules`
@@ -75,9 +83,9 @@ Conventions:
 **Goal:** the database exists and the pure business rules exist with tests, before any UI.
 
 **Prompt to agent:**
-> Read DECISIONS.md and prisma/schema.prisma. Create the first migration. Add the raw SQL CHECK constraints listed in the schema header comment to that migration. Create `lib/db.ts` (Prisma singleton), `lib/money.ts` (format minor units), and `lib/domain/` with pure functions and Vitest tests for: `classify(score)`, `isValidScore(score)`, `canTransition(from, to)`, `formatStudentNumber(year, seq)`, `isLateSubmission(submittedAt, deadline)`. Boundary tests must include 39, 40, 59, 60, 69, 70, 0, 100, -1, 101 and 55.5.
+> Read DECISIONS.md and prisma/schema.prisma. Create the first migration and run `npm run db:generate`. Add the raw SQL CHECK constraints listed in the schema header comment to that migration. Create `lib/db.ts` (Prisma Client singleton built with the `@prisma/adapter-pg` adapter, imported from the generated folder, and safe against duplicate instances during hot reload in dev), `lib/money.ts` (format minor units), and `lib/domain/` with pure functions and Vitest tests for: `classify(score)`, `isValidScore(score)`, `canTransition(from, to)`, `formatStudentNumber(year, seq)`, `isLateSubmission(submittedAt, deadline)`. Boundary tests must include 39, 40, 59, 60, 69, 70, 0, 100, -1, 101 and 55.5.
 
-**Done when:** `prisma migrate dev` succeeds, `npm test` passes.
+**Done when:** `npm run db:migrate` succeeds, `npm run db:generate` produces the client in `generated/prisma`, `npm test` passes.
 
 **Commits:**
 1. `feat(db): initial schema and migration with check constraints`
@@ -222,7 +230,7 @@ Split into small prompts, one per commit:
 **Goal:** the reviewer opens the app and sees every edge case already working.
 
 **Prompt to agent:**
-> Extend `prisma/seed.ts` to be idempotent (safe to run twice) and create: 2 programmes, modules, at least 8 students, and linked student users for the role switcher. Include deliberately: one student overdue on fees with a partial payment, one fully paid, one Deferred, one Withdrawn who still owes money, one student with a payment and a reversal, one on-time submission, one late submission, one withheld grade, one published Distinction, one grade of exactly 40, one grade of 59, and one assessment still Open with no submissions. Add an npm script `db:seed` and a comment block at the top of the seed listing which student demonstrates which case.
+> Extend `prisma/seed.ts` to be idempotent (safe to run twice) and create: 2 programmes, modules, at least 8 students, and linked student users for the role switcher. Include deliberately: one student overdue on fees with a partial payment, one fully paid, one Deferred, one Withdrawn who still owes money, one student with a payment and a reversal, one on-time submission, one late submission, one withheld grade, one published Distinction, one grade of exactly 40, one grade of 59, and one assessment still Open with no submissions. Make sure the `db:seed` script runs it, and add a comment block at the top of the seed listing which student demonstrates which case.
 
 **Done when:** `npm run db:reset && npm run db:seed` gives a populated app in one command.
 
@@ -256,14 +264,14 @@ Then fix the gaps in small commits. Also check:
 **Goal:** a reviewer can run it from a clean clone in under five minutes.
 
 **Prompt to agent (README draft only):**
-> Draft a README from DECISIONS.md and AI_LOG.md: what it is, how to run it locally (three ways to get a database: local Postgres, optional Docker, or a hosted free tier like Neon or Supabase, each only changing `DATABASE_URL`; then env vars, migrate, seed, dev), how to use the role switcher including the incognito tip, key decisions, edge cases handled, and what I would do next. Do not write the "How I used AI" section; I will write that from my log.
+> Draft a README from DECISIONS.md and AI_LOG.md: what it is, how to run it locally (three ways to get a database: local Postgres, optional Docker, or a hosted free tier like Neon or Supabase, each only changing `DATABASE_URL`; then env vars, install, `db:generate`, `db:migrate`, `db:seed`, dev), how to use the role switcher including the incognito tip, key decisions, edge cases handled, and what I would do next. Do not write the "How I used AI" section; I will write that from my log.
 
 You then write "How I used AI" yourself from `AI_LOG.md`: tools used, what worked, where the output was wrong and what you changed, what you wrote by hand.
 
 **Final check (do not skip):**
 1. Clone the repo into a fresh folder.
 2. Follow only the README steps.
-3. Confirm install, migrate, seed and run all work.
+3. Confirm install, generate, migrate, seed and run all work.
 4. Confirm `.env` is not in the repo and `.env.example` is complete.
 5. Add 3 to 5 screenshots or a short Loom walkthrough.
 
