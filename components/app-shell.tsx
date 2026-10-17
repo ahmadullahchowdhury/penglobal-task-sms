@@ -28,6 +28,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 {user.role === "STUDENT" ? "My dashboard" : "Dashboard"}
               </Link>
             )}
+            {user?.role === "REGISTRY_ADMIN" && (
+              <Link
+                href="/staff/students"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Students
+              </Link>
+            )}
           </nav>
           {switcherEnabled && (
             <div className="flex flex-wrap items-center gap-3">
