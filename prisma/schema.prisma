@@ -1,0 +1,300 @@
+// Student Management System: Registry module
+// Place this file at prisma/schema.prisma
+//
+// Written for Prisma 5/6. If your tooling installs a newer major version,
+// the datasource URL setup may differ; check the Prisma docs for that version.
+//
+// Design rules (see DECISIONS.md):
+//   - Money is stored as integer minor units (pence/cents). Never floats.
+//   - Balance is derived (charges minus payments). It is never stored.
+//   - Payments are immutable. Corrections are reversal rows.
+//   - Students are never hard deleted. Relations use onDelete: Restrict.
+//   - Classification (Pass/Merit/Distinction) is computed in code, not stored.
+//
+// Constraints Prisma cannot express. Add these as raw SQL in the first migration:
+//   ALTER TABLE "Grade"   ADD CONSTRAINT grade_score_range CHECK ("score" BETWEEN 0 AND 100);
+//   ALTER TABLE "Payment" ADD CONSTRAINT payment_amount_nonzero CHECK ("amount" <> 0);
+//   ALTER TABLE "Payment" ADD CONSTRAINT payment_kind_sign CHECK (
+//     ("kind" = 'PAYMENT' AND "amount" > 0) OR ("kind" = 'REVERSAL' AND "amount" < 0)
+//   );
+//   ALTER TABLE "FeeCharge" ADD CONSTRAINT fee_charge_positive CHECK ("amount" > 0);
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  REGISTRY_ADMIN
+  STAFF
+  STUDENT
+}
+
+enum EnrolmentStatus {
+  ENROLLED
+  DEFERRED
+  WITHDRAWN
+  COMPLETED
+}
+
+enum AssessmentState {
+  DRAFT // staff are still preparing it, students cannot see it
+  OPEN // accepting submissions, late ones are flagged
+  CLOSED // no further submissions of any kind
+}
+
+enum PaymentKind {
+  PAYMENT
+  REVERSAL // negative amount that points at the payment it cancels
+}
+
+// ---------------------------------------------------------------------------
+// People and access
+// ---------------------------------------------------------------------------
+
+// Stand-in identity for the role switcher. A real auth provider would replace
+// how users are resolved, not this table's role semantics.
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+
+  // Set only when role = STUDENT
+  student Student?
+
+  statusChanges      StatusChange[] @relation("StatusChangeActor")
+  paymentsRecorded   Payment[]      @relation("PaymentRecorder")
+  assessmentsCreated Assessment[]   @relation("AssessmentCreator")
+  gradesEntered      Grade[]        @relation("GradeEntrant")
+  gradesPublished    Grade[]        @relation("GradePublisher")
+  auditLogs          AuditLog[]
+}
+
+// ---------------------------------------------------------------------------
+// Academic structure
+// ---------------------------------------------------------------------------
+
+model Programme {
+  id         String @id @default(cuid())
+  code       String @unique // e.g. "BSC-CS"
+  name       String
+  baseFee    Int // minor units; copied onto a FeeCharge at enrolment
+  feeDueDays Int    @default(30) // days after enrolment that the charge falls due
+
+  students Student[]
+  modules  Module[]
+}
+
+model Module {
+  id          String @id @default(cuid())
+  code        String @unique // e.g. "CS101"
+  name        String
+  programmeId String
+
+  programme   Programme    @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+  assessments Assessment[]
+
+  @@index([programmeId])
+}
+
+// ---------------------------------------------------------------------------
+// Enrolment
+// ---------------------------------------------------------------------------
+
+model Student {
+  id            String          @id @default(cuid())
+  studentNumber String          @unique // SMS-2025-0001, generated in a transaction
+  fullName      String
+  email         String          @unique
+  dateOfBirth   DateTime        @db.Date
+  programmeId   String
+  academicYear  Int // starting year, 2025 means 2025/26
+  status        EnrolmentStatus @default(ENROLLED)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  userId String? @unique
+
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+
+  statusHistory StatusChange[]
+  feeCharges    FeeCharge[]
+  payments      Payment[]
+  submissions   Submission[]
+  grades        Grade[]
+
+  @@index([status])
+  @@index([programmeId])
+  @@index([academicYear])
+}
+
+// One row per academic year. Incremented inside a transaction so concurrent
+// enrolments can never be issued the same Student ID.
+model StudentIdCounter {
+  year    Int @id
+  lastSeq Int @default(0)
+}
+
+model StatusChange {
+  id         String           @id @default(cuid())
+  studentId  String
+  fromStatus EnrolmentStatus? // null for the initial enrolment
+  toStatus   EnrolmentStatus
+  reason     String?
+  changedById String?
+  createdAt  DateTime         @default(now())
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  changedBy User?   @relation("StatusChangeActor", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([studentId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Fees and payments
+// ---------------------------------------------------------------------------
+
+// What the student owes. The amount is a snapshot, so a later change to the
+// programme fee never re-prices existing students. Several charges per student
+// are supported (for example instalments).
+model FeeCharge {
+  id          String   @id @default(cuid())
+  studentId   String
+  description String   @default("Tuition fee")
+  amount      Int // minor units, must be > 0
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([studentId, dueDate])
+}
+
+// Append only. Never update or delete a row.
+// PAYMENT   -> positive amount
+// REVERSAL  -> negative amount, reversalOfId points at the original payment
+model Payment {
+  id           String      @id @default(cuid())
+  studentId    String
+  kind         PaymentKind @default(PAYMENT)
+  amount       Int // minor units, sign enforced by CHECK constraint
+  paidAt       DateTime
+  reference    String      @unique // bank or receipt reference, no duplicates
+  note         String?
+  reversalOfId String?     @unique // a payment can be reversed at most once
+  recordedById String?
+  createdAt    DateTime    @default(now())
+
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  recordedBy User?    @relation("PaymentRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+  reversalOf Payment? @relation("PaymentReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversedBy Payment? @relation("PaymentReversal")
+
+  @@index([studentId, paidAt])
+}
+
+// ---------------------------------------------------------------------------
+// Assessments and submissions
+// ---------------------------------------------------------------------------
+
+model Assessment {
+  id          String          @id @default(cuid())
+  title       String
+  moduleId    String
+  deadline    DateTime // stored in UTC
+  state       AssessmentState @default(DRAFT)
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  module    Module       @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  createdBy User         @relation("AssessmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  submissions Submission[]
+  grades      Grade[]
+
+  @@index([moduleId])
+  @@index([state, deadline])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  studentId    String
+  assessmentId String
+  storageKey   String   @unique // random generated file name on disk
+  originalName String // what the student uploaded it as
+  mimeType     String
+  sizeBytes    Int
+  submittedAt  DateTime @default(now()) // UTC
+  isLate       Boolean // decided at submit time, not recomputed later
+  updatedAt    DateTime @updatedAt
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+
+  // One submission per student per assessment. Resubmission replaces the file
+  // in place and is only allowed before the deadline.
+  @@unique([studentId, assessmentId])
+  @@index([assessmentId])
+}
+
+// ---------------------------------------------------------------------------
+// Marksheet
+// ---------------------------------------------------------------------------
+
+// The classification label is computed from score using constants in code.
+// A grade is only created for a student who has a submission (checked in the
+// API). Students can read a grade only while isPublished = true.
+model Grade {
+  id            String    @id @default(cuid())
+  studentId     String
+  assessmentId  String
+  score         Int // 0 to 100, range enforced by CHECK constraint
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+  publishedById String?
+  gradedById    String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  student     Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  assessment  Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  gradedBy    User       @relation("GradeEntrant", fields: [gradedById], references: [id], onDelete: Restrict)
+  publishedBy User?      @relation("GradePublisher", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, assessmentId])
+  @@index([assessmentId])
+  @@index([studentId, isPublished])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+// Sensitive actions only: payment reversal, grade change, publish/unpublish,
+// status change. metadata holds before/after values.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String // e.g. "GRADE_UPDATED", "PAYMENT_REVERSED"
+  entityType String // e.g. "Grade"
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
