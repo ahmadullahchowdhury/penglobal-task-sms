@@ -1,8 +1,14 @@
 // Student Management System: Registry module
 // Place this file at prisma/schema.prisma
 //
-// Written for Prisma 5/6. If your tooling installs a newer major version,
-// the datasource URL setup may differ; check the Prisma docs for that version.
+// Written for Prisma ORM 7.
+//   - The generator is "prisma-client" with a required output path. Import the
+//     client from the generated folder (generated/prisma/client), not from
+//     "@prisma/client".
+//   - The datasource URL is not set here. It lives in prisma.config.ts at the
+//     project root (url: env("DATABASE_URL")).
+//   - The client is created with a driver adapter (@prisma/adapter-pg).
+//   - The generated folder is gitignored. Run `npm run db:generate` after install.
 //
 // Design rules (see DECISIONS.md):
 //   - Money is stored as integer minor units (pence/cents). Never floats.
@@ -20,12 +26,12 @@
 //   ALTER TABLE "FeeCharge" ADD CONSTRAINT fee_charge_positive CHECK ("amount" > 0);
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------

@@ -39,7 +39,7 @@ yarn-error.log*
 /uploads/
 
 # prisma generated client
-/lib/generated/
+/generated/
 
 # vercel
 .vercel
