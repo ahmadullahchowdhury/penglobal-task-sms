@@ -13,7 +13,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force --skip-seed && npm run db:seed"
+    "db:reset": "prisma migrate reset --force && node -e \"require('dotenv/config');require('fs').rmSync(process.env.UPLOAD_DIR||'uploads',{recursive:true,force:true})\" && npm run db:seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
