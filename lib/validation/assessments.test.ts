@@ -35,3 +35,32 @@ describe("updateAssessmentSchema", () => {
     expect(updateAssessmentSchema.safeParse({ deadline: hours(-5) }).success).toBe(false);
   });
 });
+
+describe("deadlines are compared as instants, whatever the offset", () => {
+  const withOffset = (hoursAhead: number, offset: string) => {
+    // The same instant written in a different timezone.
+    const instant = new Date(Date.now() + hoursAhead * 3600_000);
+    const local = new Date(instant.getTime() + Number(offset.slice(0, 3)) * 3600_000);
+    return `${local.toISOString().slice(0, 19)}${offset}`;
+  };
+
+  it("accepts a future deadline written in +06:00 and in -08:00", () => {
+    for (const offset of ["+06:00", "-08:00", "+00:00"]) {
+      const r = createAssessmentSchema.safeParse({ ...valid, deadline: withOffset(5, offset) });
+      expect(r.success, offset).toBe(true);
+    }
+  });
+
+  it("rejects a past deadline whichever offset it is written in", () => {
+    for (const offset of ["+06:00", "-08:00", "+00:00"]) {
+      const r = createAssessmentSchema.safeParse({ ...valid, deadline: withOffset(-5, offset) });
+      expect(r.success, offset).toBe(false);
+    }
+  });
+
+  it("reads the same instant regardless of how it is written", () => {
+    const a = new Date("2099-06-01T12:00:00+06:00").getTime();
+    const b = new Date("2099-06-01T06:00:00Z").getTime();
+    expect(a).toBe(b);
+  });
+});
