@@ -52,7 +52,14 @@ export default async function AssessmentsPage() {
           <TableBody>
             {assessments.map((a) => (
               <TableRow key={a.id}>
-                <TableCell className="font-medium">{a.title}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    href={`/staff/assessments/${a.id}`}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {a.title}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   {a.module.code}{" "}
                   <span className="text-muted-foreground">({a.module.programme.code})</span>
