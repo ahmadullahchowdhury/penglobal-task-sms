@@ -12,6 +12,7 @@ const programmeSummary = { select: { id: true, code: true, name: true } } as con
 // the initial status and snapshot the programme fee as a charge. Any failure
 // (for example a duplicate email) rolls the counter back too.
 export async function createStudent(input: CreateStudentInput, actorId: string) {
+  const status = input.status ?? "ENROLLED";
   const programme = await prisma.programme.findUnique({
     where: { id: input.programmeId },
   });
@@ -39,8 +40,9 @@ export async function createStudent(input: CreateStudentInput, actorId: string) 
           dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00.000Z`),
           programmeId: programme.id,
           academicYear: input.academicYear,
+          status,
           statusHistory: {
-            create: { fromStatus: null, toStatus: "ENROLLED", changedById: actorId },
+            create: { fromStatus: null, toStatus: status, changedById: actorId },
           },
           feeCharges: {
             create: {

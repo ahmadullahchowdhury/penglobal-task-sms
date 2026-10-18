@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,7 +11,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { createStudentSchema } from "@/lib/validation/students";
+import { statusLabel } from "@/lib/domain/status";
+import { createStudentSchema, INITIAL_STATUSES } from "@/lib/validation/students";
 
 type FormInput = z.input<typeof createStudentSchema>;
 type FormOutput = z.output<typeof createStudentSchema>;
@@ -34,7 +36,7 @@ export function CreateStudentForm({
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(createStudentSchema),
-    defaultValues: { programmeId: "", academicYear: defaultYear },
+    defaultValues: { programmeId: "", academicYear: defaultYear, status: "ENROLLED" },
   });
 
   async function onSubmit(values: FormOutput) {
@@ -63,7 +65,7 @@ export function CreateStudentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-5" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
       <Field label="Full name" htmlFor="fullName" error={errors.fullName?.message}>
         <Input id="fullName" autoComplete="off" aria-invalid={!!errors.fullName} {...register("fullName")} />
       </Field>
@@ -100,6 +102,16 @@ export function CreateStudentForm({
         />
       </Field>
 
+      <Field label="Enrolment status" htmlFor="status" error={errors.status?.message}>
+        <NativeSelect id="status" {...register("status")}>
+          {INITIAL_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {statusLabel(s)}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+
       {formError && (
         <p role="alert" className="text-sm text-destructive">
           {formError}
@@ -108,6 +120,7 @@ export function CreateStudentForm({
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
           {isSubmitting ? "Creating…" : "Create student"}
         </Button>
         <Link href="/staff/students" className={buttonVariants({ variant: "ghost" })}>

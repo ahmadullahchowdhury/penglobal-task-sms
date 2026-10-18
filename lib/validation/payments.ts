@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAcceptablePaymentDate } from "@/lib/domain/payment-date";
 
 export const recordPaymentSchema = z.object({
   amount: z
@@ -6,6 +7,11 @@ export const recordPaymentSchema = z.object({
     .int("Amount must be a whole number of pence")
     .positive("Amount must be greater than zero"),
   reference: z.string().trim().min(1, "Reference is required").max(100),
+  // The day the money was received (YYYY-MM-DD). Left out means now.
+  paidOn: z.iso
+    .date("Use the format YYYY-MM-DD")
+    .refine((d) => isAcceptablePaymentDate(d, new Date()), "Date received cannot be in the future")
+    .optional(),
   note: z
     .string()
     .trim()
@@ -17,6 +23,7 @@ export const recordPaymentSchema = z.object({
 export type RecordPaymentInput = {
   amount: number;
   reference: string;
+  paidOn?: string;
   note?: string;
 };
 

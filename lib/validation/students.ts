@@ -7,6 +7,9 @@ import {
 } from "@/lib/constants";
 import { isSensibleDateOfBirth } from "@/lib/domain/age";
 import { EnrolmentStatus } from "@/generated/prisma/enums";
+
+export const INITIAL_STATUSES = ["ENROLLED", "DEFERRED"] as const;
+
 export const createStudentSchema = z.object({
   fullName: z.string().trim().min(1, "Full name is required").max(200),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
@@ -22,9 +25,14 @@ export const createStudentSchema = z.object({
     .int()
     .min(ACADEMIC_YEAR_MIN)
     .max(ACADEMIC_YEAR_MAX),
+  // A new student is either enrolled or deferred from the start. Withdrawn and
+  // Completed only make sense for someone who has already been on the programme.
+  status: z.enum(INITIAL_STATUSES).default("ENROLLED"),
 });
 
-export type CreateStudentInput = z.infer<typeof createStudentSchema>;
+export type CreateStudentInput = Omit<z.infer<typeof createStudentSchema>, "status"> & {
+  status?: (typeof INITIAL_STATUSES)[number];
+};
 
 export const listStudentsQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),

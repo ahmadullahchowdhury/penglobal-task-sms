@@ -57,6 +57,19 @@ describe("createStudentSchema", () => {
     }
   });
 
+  it("defaults the status to Enrolled and also accepts Deferred", () => {
+    const none = createStudentSchema.safeParse(valid);
+    expect(none.success && none.data.status).toBe("ENROLLED");
+    const deferred = createStudentSchema.safeParse({ ...valid, status: "DEFERRED" });
+    expect(deferred.success && deferred.data.status).toBe("DEFERRED");
+  });
+
+  it("does not allow a new student to start as Withdrawn, Completed or anything else", () => {
+    for (const status of ["WITHDRAWN", "COMPLETED", "GONE", ""]) {
+      expect(createStudentSchema.safeParse({ ...valid, status }).success, status).toBe(false);
+    }
+  });
+
   it("requires a programme", () => {
     expect(createStudentSchema.safeParse({ ...valid, programmeId: "" }).success).toBe(false);
   });

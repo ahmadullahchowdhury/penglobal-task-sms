@@ -28,6 +28,19 @@ describe("recordPaymentSchema", () => {
     expect(r.success && r.data.reference).toBe("REF-9");
   });
 
+  it("takes an optional date received, today or earlier", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    expect(recordPaymentSchema.safeParse(valid).success).toBe(true);
+    expect(recordPaymentSchema.safeParse({ ...valid, paidOn: today }).success).toBe(true);
+    expect(recordPaymentSchema.safeParse({ ...valid, paidOn: "2025-03-14" }).success).toBe(true);
+  });
+
+  it("rejects a date received in the future, or one that is not a date", () => {
+    for (const paidOn of ["2099-01-01", "15/06/2026", "2026-13-40", "soon"]) {
+      expect(recordPaymentSchema.safeParse({ ...valid, paidOn }).success, paidOn).toBe(false);
+    }
+  });
+
   it("turns a blank note into no note", () => {
     const r = recordPaymentSchema.safeParse({ ...valid, note: "   " });
     expect(r.success && r.data.note).toBeUndefined();

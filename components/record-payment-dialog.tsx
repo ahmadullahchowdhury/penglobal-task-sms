@@ -1,5 +1,6 @@
 "use client";
 
+import { Banknote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseMoneyToMinor } from "@/lib/money";
 
+// Today in the viewer's own timezone, as YYYY-MM-DD (the format a date input uses).
+const today = () => new Date().toLocaleDateString("en-CA");
+
 export function RecordPaymentDialog({
   studentId,
   outstandingLabel,
@@ -27,6 +31,7 @@ export function RecordPaymentDialog({
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
+  const [paidOn, setPaidOn] = useState(today());
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -37,6 +42,7 @@ export function RecordPaymentDialog({
     if (next) {
       setAmount("");
       setReference("");
+      setPaidOn(today());
       setNote("");
       setErrors({});
       setFormError(null);
@@ -59,7 +65,7 @@ export function RecordPaymentDialog({
       const res = await fetch(`/api/students/${studentId}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: minor, reference, note }),
+        body: JSON.stringify({ amount: minor, reference, paidOn: paidOn || undefined, note }),
       });
       if (res.ok) {
         setOpen(false);
@@ -82,7 +88,10 @@ export function RecordPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={<Button />}>Record payment</DialogTrigger>
+      <DialogTrigger render={<Button />}>
+        <Banknote className="size-4" />
+        Record payment
+      </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="grid gap-4" noValidate>
           <DialogHeader>
@@ -111,6 +120,19 @@ export function RecordPaymentDialog({
               aria-invalid={!!errors.reference}
             />
             {errors.reference && <p className="text-sm text-destructive">{errors.reference}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="paidOn">Date received</Label>
+            <Input
+              id="paidOn"
+              type="date"
+              value={paidOn}
+              max={today()}
+              onChange={(e) => setPaidOn(e.target.value)}
+              aria-invalid={!!errors.paidOn}
+            />
+            {errors.paidOn && <p className="text-sm text-destructive">{errors.paidOn}</p>}
           </div>
 
           <div className="space-y-1.5">

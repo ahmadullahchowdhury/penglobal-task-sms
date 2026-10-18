@@ -83,6 +83,24 @@ describe.skipIf(!hasDb)("createStudent", () => {
     expect(next.studentNumber).toBe(`SMS-${YEAR}-0021`);
   });
 
+  it("enrols as Enrolled by default and records that as the first history entry", async () => {
+    const s = await createStudent(input(300), actorId);
+    expect(s.status).toBe("ENROLLED");
+    const history = await prisma.statusChange.findMany({ where: { studentId: s.id } });
+    expect(history.map((h) => [h.fromStatus, h.toStatus])).toEqual([[null, "ENROLLED"]]);
+  });
+
+  it("can enrol a student as Deferred from the start, still with a fee charge", async () => {
+    const s = await createStudent({ ...input(301), status: "DEFERRED" }, actorId);
+    expect(s.status).toBe("DEFERRED");
+    const full = await prisma.student.findUniqueOrThrow({
+      where: { id: s.id },
+      include: { statusHistory: true, feeCharges: true },
+    });
+    expect(full.statusHistory.map((h) => [h.fromStatus, h.toStatus])).toEqual([[null, "DEFERRED"]]);
+    expect(full.feeCharges).toHaveLength(1);
+  });
+
   describe("changeStudentStatus", () => {
     const fresh = (n: number) => createStudent(input(200 + n), actorId);
 

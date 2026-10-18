@@ -2,6 +2,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { Role } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { computeBalance, computeOverdue, exceedsBalance } from "@/lib/domain/balance";
+import { paymentDateFor } from "@/lib/domain/payment-date";
 import { ApiError } from "@/lib/http";
 import { formatMoney } from "@/lib/money";
 import type { RecordPaymentInput, ReversePaymentInput } from "@/lib/validation/payments";
@@ -74,7 +75,7 @@ export async function recordPayment(
           studentId,
           kind: "PAYMENT",
           amount: input.amount,
-          paidAt: new Date(),
+          paidAt: paymentDateFor(input.paidOn, new Date()),
           reference: input.reference,
           note: input.note,
           recordedById: actorId,

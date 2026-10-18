@@ -188,6 +188,25 @@ describe.skipIf(!hasDb)("fees and payments", () => {
     expect(view.overdue.daysOverdue).toBeGreaterThan(0);
   });
 
+  it("records a payment on the date it was received, and now when none is given", async () => {
+    const s = await newStudent();
+    const earlier = await fees.recordPayment(
+      s.id,
+      { amount: 1000, reference: ref(), paidOn: "2026-03-02" },
+      actorId,
+    );
+    expect(earlier.paidAt.toISOString()).toBe("2026-03-02T12:00:00.000Z");
+
+    const before = Date.now();
+    const now = await fees.recordPayment(s.id, { amount: 1000, reference: ref() }, actorId);
+    expect(now.paidAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
+
+    // newest first, and the balance does not care which day each was received
+    const view = await fees.getFees(s.id);
+    expect(view.payments.map((p) => p.id)).toEqual([now.id, earlier.id]);
+    expect(view.balance).toBe(baseFee - 2000);
+  });
+
   it("lets a student read only their own balance; anyone else's is not found", async () => {
     const mine = await newStudent();
     const theirs = await newStudent();
