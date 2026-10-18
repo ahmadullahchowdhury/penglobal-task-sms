@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AssessmentStateBadge } from "@/components/assessment-state-badge";
 import { LocalTime } from "@/components/local-time";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import { getAssessmentSubmissions } from "@/lib/services/submissions";
 export default async function AssessmentDetailPage({
   params,
 }: PageProps<"/staff/assessments/[id]">) {
-  await requirePageRole(...STAFF_AREA_ROLES);
+  const user = await requirePageRole(...STAFF_AREA_ROLES);
   const { id } = await params;
 
   const view = await getAssessmentSubmissions(id).catch((err) => {
@@ -47,7 +48,17 @@ export default async function AssessmentDetailPage({
               <LocalTime iso={assessment.deadline.toISOString()} />
             </p>
           </div>
-          <AssessmentStateBadge state={assessment.state} />
+          <div className="flex items-center gap-3">
+            <AssessmentStateBadge state={assessment.state} />
+            {user.role === "STAFF" && (
+              <Link
+                href={`/staff/assessments/${assessment.id}/marksheet`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Marksheet
+              </Link>
+            )}
+          </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {submissions.length} submitted ({lateCount} late), {notSubmitted.length} not submitted
