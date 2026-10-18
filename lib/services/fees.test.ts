@@ -39,6 +39,7 @@ describe.skipIf(!hasDb)("fees and payments", () => {
     await prisma.feeCharge.deleteMany({ where: { studentId: { in: studentIds } } });
     await prisma.student.deleteMany({ where: { id: { in: studentIds } } });
     await prisma.studentIdCounter.deleteMany({ where: { year: YEAR } });
+    await prisma.user.deleteMany({ where: { email: { endsWith: EMAIL_DOMAIN } } });
   }
 
   beforeAll(async () => {
@@ -185,6 +186,33 @@ describe.skipIf(!hasDb)("fees and payments", () => {
     const view = await fees.getFees(s.id, later);
     expect(view.overdue.overdueAmount).toBe(baseFee);
     expect(view.overdue.daysOverdue).toBeGreaterThan(0);
+  });
+
+  it("lets a student read only their own balance; anyone else's is not found", async () => {
+    const mine = await newStudent();
+    const theirs = await newStudent();
+    const user = await prisma.user.create({
+      data: { name: "Fee Owner", email: `owner${counter++}${EMAIL_DOMAIN}`, role: "STUDENT" },
+    });
+    await prisma.student.update({ where: { id: mine.id }, data: { userId: user.id } });
+    const asStudent = { id: user.id, role: "STUDENT" as const };
+
+    expect((await fees.getFeesForUser(asStudent, mine.id)).balance).toBe(baseFee);
+    await expect(fees.getFeesForUser(asStudent, theirs.id)).rejects.toMatchObject({ status: 404 });
+    await expect(fees.getFeesForUser(asStudent, "nope")).rejects.toMatchObject({ status: 404 });
+
+    // a student user with no student record sees nothing either
+    const orphan = await prisma.user.create({
+      data: { name: "No Record", email: `orphan${counter++}${EMAIL_DOMAIN}`, role: "STUDENT" },
+    });
+    await expect(
+      fees.getFeesForUser({ id: orphan.id, role: "STUDENT" }, mine.id),
+    ).rejects.toMatchObject({ status: 404 });
+
+    // an admin can read any student
+    expect((await fees.getFeesForUser({ id: actorId, role: "REGISTRY_ADMIN" }, theirs.id)).balance).toBe(
+      baseFee,
+    );
   });
 
   it("returns 404 for an unknown student", async () => {

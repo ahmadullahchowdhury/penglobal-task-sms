@@ -57,8 +57,20 @@ export default async function MarksheetPage({
         </p>
       </div>
 
-      <PublishAllButton assessmentId={assessment.id} />
+      {rows.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border p-8 text-center">
+          <p className="font-medium">Nothing to grade yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {assessment.state === "DRAFT"
+              ? "Open the assessment so students can submit."
+              : "No student has submitted work for this assessment."}
+          </p>
+        </div>
+      )}
 
+      {rows.length > 0 && <PublishAllButton assessmentId={assessment.id} />}
+
+      {(rows.length > 0 || notSubmitted.length > 0) && (
       <Table>
         <TableHeader>
           <TableRow>
@@ -102,6 +114,7 @@ export default async function MarksheetPage({
           ))}
         </TableBody>
       </Table>
+      )}
     </div>
   );
 }

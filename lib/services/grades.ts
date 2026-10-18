@@ -234,7 +234,7 @@ const publishedGradeSelect = {
 
 // Only published grades are ever selected here. Withheld ones are never read, so
 // nothing about them can end up in a response.
-export async function getPublishedResults(studentId: string) {
+async function getPublishedResults(studentId: string) {
   const grades = await prisma.grade.findMany({
     where: { studentId, isPublished: true },
     select: publishedGradeSelect,

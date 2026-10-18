@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
 import { formatMoney } from "@/lib/money";
 import type { getFees } from "@/lib/services/fees";
 
@@ -61,7 +61,9 @@ export function FeesView({ fees, canManage }: { fees: Fees; canManage: boolean }
               {charges.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>{c.description}</TableCell>
-                  <TableCell>{formatDate(c.dueDate)}</TableCell>
+                  <TableCell>
+                    <LocalTime iso={c.dueDate.toISOString()} dateOnly />
+                  </TableCell>
                   <TableCell className="text-right">{formatMoney(c.amount)}</TableCell>
                 </TableRow>
               ))}
@@ -88,7 +90,9 @@ export function FeesView({ fees, canManage }: { fees: Fees; canManage: boolean }
             <TableBody>
               {payments.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>{formatDateTime(p.paidAt)}</TableCell>
+                  <TableCell>
+                    <LocalTime iso={p.paidAt.toISOString()} />
+                  </TableCell>
                   <TableCell className="font-mono">
                     {p.reference}{" "}
                     {p.kind === "REVERSAL" && <Badge variant="outline">Reversal</Badge>}

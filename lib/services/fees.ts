@@ -1,4 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
+import type { Role } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db";
 import { computeBalance, computeOverdue, exceedsBalance } from "@/lib/domain/balance";
 import { ApiError } from "@/lib/http";
@@ -148,4 +149,17 @@ export async function reversePayment(
     }
     throw err;
   }
+}
+
+// Admins can read any student's fees. A student can only read their own, and
+// anyone else's id is "not found" so it does not even confirm the student exists.
+export async function getFeesForUser(user: { id: string; role: Role }, studentId: string) {
+  if (user.role === "STUDENT") {
+    const own = await prisma.student.findUnique({
+      where: { userId: user.id },
+      select: { id: true },
+    });
+    if (!own || own.id !== studentId) throw new ApiError(404, "NOT_FOUND", "Student not found");
+  }
+  return getFees(studentId);
 }

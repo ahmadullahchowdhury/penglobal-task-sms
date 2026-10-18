@@ -6,7 +6,8 @@ import { StatusChangeDialog } from "@/components/status-change-dialog";
 import { requirePageRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { allowedTransitions, requiresReason, statusLabel } from "@/lib/domain/status";
-import { academicYearLabel, formatDate, formatDateTime } from "@/lib/format";
+import { LocalTime } from "@/components/local-time";
+import { academicYearLabel, formatDate } from "@/lib/format";
 import { getFees } from "@/lib/services/fees";
 import { cn } from "@/lib/utils";
 
@@ -37,12 +38,12 @@ export default async function StudentDetailPage({
     reasonRequired: requiresReason(student.status, to),
   }));
 
-  const details: [string, string][] = [
+  const details: [string, React.ReactNode][] = [
     ["Email", student.email],
     ["Date of birth", formatDate(student.dateOfBirth)],
     ["Programme", `${student.programme.code} · ${student.programme.name}`],
     ["Academic year", academicYearLabel(student.academicYear)],
-    ["Enrolled on", formatDate(student.createdAt)],
+    ["Enrolled on", <LocalTime key="enrolled" iso={student.createdAt.toISOString()} dateOnly />],
   ];
 
   return (
@@ -113,7 +114,7 @@ export default async function StudentDetailPage({
                 {statusLabel(h.toStatus)}
               </p>
               <p className="text-muted-foreground">
-                {formatDateTime(h.createdAt)}
+                <LocalTime iso={h.createdAt.toISOString()} />
                 {h.changedBy ? ` · ${h.changedBy.name}` : ""}
               </p>
               {h.reason && <p>{h.reason}</p>}
