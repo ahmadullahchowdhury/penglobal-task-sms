@@ -22,3 +22,6 @@ export const ACADEMIC_YEAR_MAX = 2100;
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
+
+// Uploads: PDF and DOCX only, up to 10 MB.
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
