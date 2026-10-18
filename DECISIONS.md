@@ -130,3 +130,22 @@ Auth is optional in the brief, so I use a role switcher backed by a cookie that 
 ## 11. AI usage
 
 Covered in the README under "How I used AI", including where the output was wrong and what I changed.
+## 12. Details settled while building
+
+Smaller choices the brief left open, now enforced by the code and covered by tests.
+
+| Area | Decision |
+|---|---|
+| Date of birth | In the past, giving an age of 16 to 100. The limits are constants in `lib/constants.ts`. |
+| New students | Start as Enrolled by default. The create form also allows Deferred, since a student can be accepted and deferred straight away. Withdrawn and Completed only make sense for someone who has already been on the programme, so they are not offered. The initial status is recorded in the history. |
+| Overdue days | Counted from the oldest uncovered due date and rounded up, so anything overdue is at least 1 day. A charge due exactly now is not overdue yet. |
+| Payment date | The form asks for the date the money was received, defaulting to today and not allowed in the future, because the Registry often records a transfer days after it arrives. An earlier day is stored as midday UTC on that day, and no date means the moment it is recorded. Reversals and the original stay in the ledger, and a reversal itself cannot be reversed. |
+| Reversal reason | Required, so the audit log always says why. |
+| Assessment states | Draft to Open to Closed only. Closed is final and cannot be edited. An assessment cannot be opened once its deadline has passed, so the deadline has to be moved first. |
+| Who grades | Academic staff only. Registry Admin cannot enter or publish grades. |
+| Uploads | PDF or DOCX up to 10 MB. The extension, the declared type and the file's first bytes must all agree, and the stored type comes from the validated file, not the client. |
+| Closed assessments | Students still see them (and their own submission), but cannot submit. Drafts are never visible to students. |
+| "Not submitted" lists | Enrolled students in the module's programme who have no submission. Deferred and withdrawn students cannot submit, so they are not listed. |
+| Bulk publish | "Publish all graded" publishes every withheld grade for the assessment, including ones withheld because they were edited. |
+| Pending results | A student sees "Result pending" for submitted work with no published grade. It looks the same whether the work is unmarked or marked but withheld. |
+| Times | Stored and compared in UTC. Deadlines and timestamps are shown in the viewer's local time. A date of birth is a calendar date and is never shifted. |
