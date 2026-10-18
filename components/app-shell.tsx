@@ -44,6 +44,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   Assessments
                 </Link>
+                <Link href="/student/results" className="text-muted-foreground hover:text-foreground">
+                  Results
+                </Link>
                 <Link href="/student/fees" className="text-muted-foreground hover:text-foreground">
                   Fees
                 </Link>
