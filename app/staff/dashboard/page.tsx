@@ -1,4 +1,8 @@
+import { AlertTriangle, CircleCheck, GraduationCap, Pause, LogOut, ShieldCheck, Users, Wallet } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import {
   Table,
@@ -13,50 +17,51 @@ import { requirePageRole } from "@/lib/auth";
 import { statusLabel } from "@/lib/domain/status";
 import { formatMoney } from "@/lib/money";
 import { getDashboard } from "@/lib/services/dashboard";
+import { cn } from "@/lib/utils";
+
+const STATUS_TILE = {
+  ENROLLED: { Icon: CircleCheck, tone: "text-success bg-success/12" },
+  DEFERRED: { Icon: Pause, tone: "text-[oklch(0.5_0.12_65)] bg-warning/18" },
+  WITHDRAWN: { Icon: LogOut, tone: "text-destructive bg-destructive/10" },
+  COMPLETED: { Icon: GraduationCap, tone: "text-info bg-info/12" },
+} as const;
 
 export default async function DashboardPage() {
   await requirePageRole("REGISTRY_ADMIN");
   const d = await getDashboard();
 
-  const stats = [
-    { label: "Total outstanding", value: formatMoney(d.totalOutstanding) },
-    { label: "Total overdue", value: formatMoney(d.totalOverdue) },
-    { label: "Students", value: String(d.totalStudents) },
-  ];
-
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <PageHeader
+        title="Dashboard"
+        description="Fees and enrolment at a glance. Problems come first."
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border p-4">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold">{s.value}</p>
-          </div>
-        ))}
+        <StatCard
+          icon={Wallet}
+          tone="info"
+          label="Total outstanding"
+          value={formatMoney(d.totalOutstanding)}
+        />
+        <StatCard
+          icon={AlertTriangle}
+          tone={d.totalOverdue > 0 ? "danger" : "success"}
+          label="Total overdue"
+          value={formatMoney(d.totalOverdue)}
+          hint={`${d.overdueStudents.length} ${d.overdueStudents.length === 1 ? "student" : "students"} behind on fees`}
+        />
+        <StatCard icon={Users} label="Students" value={String(d.totalStudents)} />
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Students by status</h2>
-        <div className="flex flex-wrap gap-3">
-          {Object.values(EnrolmentStatus).map((status) => (
-            <Link
-              key={status}
-              href={`/staff/students?status=${status}`}
-              className="rounded-xl border border-border px-4 py-3 hover:bg-muted"
-            >
-              <p className="text-sm text-muted-foreground">{statusLabel(status)}</p>
-              <p className="text-xl font-semibold">{d.countsByStatus[status]}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Overdue fees</h2>
+        <h2 className="text-lg">Overdue fees</h2>
         {d.overdueStudents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No students have overdue fees.</p>
+          <EmptyState
+            icon={ShieldCheck}
+            title="No overdue fees"
+            description="Every student is up to date with their payments."
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -73,7 +78,7 @@ export default async function DashboardPage() {
                   <TableCell>
                     <Link
                       href={`/staff/students/${s.id}?tab=fees`}
-                      className="underline-offset-4 hover:underline"
+                      className="font-medium underline-offset-4 hover:underline"
                     >
                       {s.fullName}
                     </Link>{" "}
@@ -84,13 +89,48 @@ export default async function DashboardPage() {
                   <TableCell>
                     <StatusBadge status={s.status} />
                   </TableCell>
-                  <TableCell className="text-right">{formatMoney(s.overdueAmount)}</TableCell>
-                  <TableCell className="text-right">{s.daysOverdue}</TableCell>
+                  <TableCell className="text-right font-medium tabular-nums">
+                    {formatMoney(s.overdueAmount)}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-right tabular-nums",
+                      s.daysOverdue >= 30 && "font-semibold text-destructive",
+                    )}
+                  >
+                    {s.daysOverdue}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg">Students by status</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Object.values(EnrolmentStatus).map((status) => {
+            const { Icon, tone } = STATUS_TILE[status];
+            return (
+              <Link
+                key={status}
+                href={`/staff/students?status=${status}`}
+                className="surface group flex items-center gap-3 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift"
+              >
+                <span className={cn("grid size-10 place-items-center rounded-lg", tone)}>
+                  <Icon className="size-5" />
+                </span>
+                <span>
+                  <span className="block text-sm text-muted-foreground">{statusLabel(status)}</span>
+                  <span className="block text-2xl font-bold leading-tight tabular-nums">
+                    {d.countsByStatus[status]}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </section>
     </div>
   );

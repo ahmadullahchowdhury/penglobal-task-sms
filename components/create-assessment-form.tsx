@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -69,7 +70,7 @@ export function CreateAssessmentForm({ modules }: { modules: ModuleOption[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-5" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
       <div className="space-y-1.5">
         <Label htmlFor="title">Title</Label>
         <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
@@ -112,6 +113,7 @@ export function CreateAssessmentForm({ modules }: { modules: ModuleOption[] }) {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
           {isSubmitting ? "Creating…" : "Create draft"}
         </Button>
         <Link href="/staff/assessments" className={buttonVariants({ variant: "ghost" })}>

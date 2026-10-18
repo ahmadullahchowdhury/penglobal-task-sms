@@ -1,4 +1,7 @@
+import { ClipboardList, Plus } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { AssessmentActions } from "@/components/assessment-actions";
 import { AssessmentStateBadge } from "@/components/assessment-state-badge";
 import { LocalTime } from "@/components/local-time";
@@ -22,20 +25,29 @@ export default async function AssessmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Assessments</h1>
-        <Link href="/staff/assessments/new" className={buttonVariants()}>
-          New assessment
-        </Link>
-      </div>
+      <PageHeader
+        title="Assessments"
+        description="Create work, open it for submissions and close it when the time is up."
+        actions={
+          <Link href="/staff/assessments/new" className={buttonVariants()}>
+            <Plus className="size-4" />
+            New assessment
+          </Link>
+        }
+      />
 
       {assessments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="font-medium">No assessments yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create a draft, then open it when students should see it.
-          </p>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No assessments yet"
+          description="Create a draft, then open it when students should see it."
+          action={
+            <Link href="/staff/assessments/new" className={buttonVariants()}>
+              <Plus className="size-4" />
+              New assessment
+            </Link>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -70,8 +82,12 @@ export default async function AssessmentsPage() {
                 <TableCell>
                   <AssessmentStateBadge state={a.state} />
                 </TableCell>
-                <TableCell className="text-right">{a.submissionCount}</TableCell>
-                <TableCell className="text-right">{a.lateCount}</TableCell>
+                <TableCell className="text-right tabular-nums">{a.submissionCount}</TableCell>
+                <TableCell
+                  className={`text-right tabular-nums ${a.lateCount > 0 ? "font-semibold text-destructive" : "text-muted-foreground"}`}
+                >
+                  {a.lateCount}
+                </TableCell>
                 <TableCell className="text-right">
                   <AssessmentActions
                     id={a.id}

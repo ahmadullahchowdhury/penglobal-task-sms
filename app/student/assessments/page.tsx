@@ -1,5 +1,8 @@
+import { CalendarClock, ClipboardList, Download, Lock, TriangleAlert } from "lucide-react";
 import { AssessmentStateBadge } from "@/components/assessment-state-badge";
+import { EmptyState } from "@/components/empty-state";
 import { LocalTime } from "@/components/local-time";
+import { PageHeader } from "@/components/page-header";
 import { SubmissionProgressBadge } from "@/components/submission-progress-badge";
 import { SubmissionUpload } from "@/components/submission-upload";
 import { requirePageRole } from "@/lib/auth";
@@ -20,8 +23,12 @@ export default async function StudentAssessmentsPage() {
   if (!student) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Assessments</h1>
-        <p className="text-muted-foreground">No student record is linked to this account.</p>
+        <PageHeader title="Assessments" />
+        <EmptyState
+          icon={ClipboardList}
+          title="No student record"
+          description="No student record is linked to this account."
+        />
       </div>
     );
   }
@@ -31,15 +38,17 @@ export default async function StudentAssessmentsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Assessments</h1>
+      <PageHeader
+        title="Assessments"
+        description="Work for your programme. Submit before the deadline to avoid being marked late."
+      />
 
       {assessments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="font-medium">No assessments yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Assessments for your programme appear here once they are open.
-          </p>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No assessments yet"
+          description="Assessments for your programme appear here once they are open."
+        />
       ) : (
         <ul className="space-y-4">
           {assessments.map((a) => {
@@ -55,7 +64,7 @@ export default async function StudentAssessmentsPage() {
             const pastDeadline = now.getTime() > a.deadline.getTime();
 
             return (
-              <li key={a.id} className="space-y-3 rounded-xl border border-border p-4">
+              <li key={a.id} className="surface space-y-4 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="font-semibold">{a.title}</h2>
@@ -69,7 +78,8 @@ export default async function StudentAssessmentsPage() {
                   </div>
                 </div>
 
-                <p className="text-sm">
+                <p className="flex flex-wrap items-center gap-x-1.5 text-sm">
+                  <CalendarClock className="size-4 text-muted-foreground" />
                   Deadline: <LocalTime iso={a.deadline.toISOString()} />
                   {a.state === "OPEN" && (
                     <span className={deadline.overdue ? " text-destructive" : " text-muted-foreground"}>
@@ -84,8 +94,9 @@ export default async function StudentAssessmentsPage() {
                     <p>
                       <a
                         href={`/api/submissions/${submission.id}/file`}
-                        className="font-medium underline underline-offset-4"
+                        className="inline-flex items-center gap-1.5 font-medium text-info underline-offset-4 hover:underline"
                       >
+                        <Download className="size-3.5" />
                         {submission.originalName}
                       </a>{" "}
                       <span className="text-muted-foreground">
@@ -94,7 +105,8 @@ export default async function StudentAssessmentsPage() {
                       </span>
                     </p>
                     {submission.isLate && (
-                      <p className="text-destructive">
+                      <p className="mt-1 flex items-center gap-1.5 text-destructive">
+                        <TriangleAlert className="size-4" />
                         Submitted {formatDuration(submission.submittedAt.getTime() - a.deadline.getTime())}{" "}
                         after the deadline.
                       </p>
@@ -103,7 +115,7 @@ export default async function StudentAssessmentsPage() {
                 )}
 
                 {decision.ok ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 rounded-lg border border-dashed border-input bg-muted/40 p-4">
                     {decision.mode === "create" && pastDeadline && (
                       <p className="text-sm text-destructive">
                         The deadline has passed. You can still submit once, and it will be marked late.
@@ -120,7 +132,8 @@ export default async function StudentAssessmentsPage() {
                     />
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Lock className="size-4" />
                     {decision.code === "NOT_OPEN"
                       ? submission
                         ? "This assessment is closed."

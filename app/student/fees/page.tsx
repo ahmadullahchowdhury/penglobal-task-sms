@@ -1,4 +1,7 @@
+import { Wallet } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { FeesView } from "@/components/fees-view";
+import { PageHeader } from "@/components/page-header";
 import { requirePageRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { STUDENT_AREA_ROLES } from "@/lib/domain/roles";
@@ -15,11 +18,15 @@ export default async function StudentFeesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">My fees</h1>
+      <PageHeader title="My fees" description="Your charges, payments and what is left to pay." />
       {student ? (
         <FeesView fees={await getFees(student.id)} canManage={false} />
       ) : (
-        <p className="text-muted-foreground">No student record is linked to this account.</p>
+        <EmptyState
+          icon={Wallet}
+          title="No student record"
+          description="No student record is linked to this account."
+        />
       )}
     </div>
   );

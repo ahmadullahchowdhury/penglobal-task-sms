@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeftRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,10 @@ export function StatusChangeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={<Button variant="outline" />}>Change status</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>
+        <ArrowLeftRight className="size-4" />
+        Change status
+      </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>

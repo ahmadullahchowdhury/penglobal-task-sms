@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export function AssessmentActions({ id, actions }: { id: string; actions: Action
               onOpenChange={(open) => setConfirming(open ? a.to : null)}
             >
               <DialogTrigger render={<Button variant="outline" size="sm" />}>
+                <Lock className="size-3.5" />
                 {a.label}
               </DialogTrigger>
               <DialogContent>
@@ -72,6 +74,7 @@ export function AssessmentActions({ id, actions }: { id: string; actions: Action
             </Dialog>
           ) : (
             <Button key={a.to} size="sm" disabled={busy} onClick={() => apply(a.to)}>
+              <Play className="size-3.5" />
               {a.label}
             </Button>
           ),

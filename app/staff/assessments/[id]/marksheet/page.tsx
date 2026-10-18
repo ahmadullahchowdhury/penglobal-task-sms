@@ -1,4 +1,7 @@
-import Link from "next/link";
+import { ClipboardCheck, EyeOff, Inbox } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 import { notFound } from "next/navigation";
 import { AssessmentStateBadge } from "@/components/assessment-state-badge";
 import { LocalTime } from "@/components/local-time";
@@ -35,37 +38,39 @@ export default async function MarksheetPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href={`/staff/assessments/${assessment.id}`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {assessment.title}
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Marksheet: {assessment.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {assessment.module.code} · {assessment.module.name} · Deadline{" "}
-              <LocalTime iso={assessment.deadline.toISOString()} />
-            </p>
-          </div>
-          <AssessmentStateBadge state={assessment.state} />
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {rows.length} submitted, {graded} graded, {withheld} withheld from students
-        </p>
+      <PageHeader
+        back={{ href: `/staff/assessments/${assessment.id}`, label: assessment.title }}
+        title={`Marksheet: ${assessment.title}`}
+        description={
+          <>
+            {assessment.module.code} · {assessment.module.name} · Deadline{" "}
+            <LocalTime iso={assessment.deadline.toISOString()} />
+          </>
+        }
+        actions={<AssessmentStateBadge state={assessment.state} />}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard icon={Inbox} label="Submitted" value={String(rows.length)} />
+        <StatCard icon={ClipboardCheck} tone="success" label="Graded" value={String(graded)} />
+        <StatCard
+          icon={EyeOff}
+          tone={withheld > 0 ? "warning" : "neutral"}
+          label="Withheld from students"
+          value={String(withheld)}
+        />
       </div>
 
       {rows.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <p className="font-medium">Nothing to grade yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {assessment.state === "DRAFT"
+        <EmptyState
+          icon={ClipboardCheck}
+          title="Nothing to grade yet"
+          description={
+            assessment.state === "DRAFT"
               ? "Open the assessment so students can submit."
-              : "No student has submitted work for this assessment."}
-          </p>
-        </div>
+              : "No student has submitted work for this assessment."
+          }
+        />
       )}
 
       {rows.length > 0 && <PublishAllButton assessmentId={assessment.id} />}

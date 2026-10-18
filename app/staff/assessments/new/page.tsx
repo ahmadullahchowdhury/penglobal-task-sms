@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { CreateAssessmentForm } from "@/components/create-assessment-form";
 import { requirePageRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -13,7 +14,12 @@ export default async function NewAssessmentPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">New assessment</h1>
+      <PageHeader
+        back={{ href: "/staff/assessments", label: "Assessments" }}
+        title="New assessment"
+        description="Create a draft now and open it when students should see it."
+      />
+      <div className="surface max-w-2xl p-6">
       <CreateAssessmentForm
         modules={modules.map((m) => ({
           id: m.id,
@@ -22,6 +28,7 @@ export default async function NewAssessmentPage() {
           programmeCode: m.programme.code,
         }))}
       />
+      </div>
     </div>
   );
 }

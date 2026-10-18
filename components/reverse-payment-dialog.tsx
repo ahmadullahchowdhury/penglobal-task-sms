@@ -1,5 +1,6 @@
 "use client";
 
+import { Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,10 @@ export function ReversePaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger render={<Button variant="ghost" size="sm" />}>Reverse</DialogTrigger>
+      <DialogTrigger render={<Button variant="ghost" size="sm" />}>
+        <Undo2 className="size-3.5" />
+        Reverse
+      </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>

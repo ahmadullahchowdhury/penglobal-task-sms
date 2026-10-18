@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -66,9 +67,10 @@ export function SubmissionUpload({
         type="file"
         accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         aria-label="File to upload"
-        className="text-sm file:mr-3 file:rounded-lg file:border file:border-input file:bg-transparent file:px-3 file:py-1 file:text-sm"
+        className="min-w-0 flex-1 cursor-pointer text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-input file:bg-card file:px-3 file:py-1.5 file:text-sm file:font-medium file:transition-colors hover:file:bg-accent"
       />
       <Button type="submit" size="sm" disabled={busy}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
         {busy ? "Uploading…" : label}
       </Button>
       {error && (

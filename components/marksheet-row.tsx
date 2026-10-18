@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, Download, Eye, EyeOff, Hourglass, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ClassificationBadge } from "@/components/classification-badge";
@@ -79,10 +80,19 @@ export function MarksheetRow(p: Props) {
         <span className="font-mono text-xs text-muted-foreground">{p.studentNumber}</span>
       </TableCell>
       <TableCell>
-        <a href={`/api/submissions/${p.submissionId}/file`} className="underline underline-offset-4">
+        <a
+          href={`/api/submissions/${p.submissionId}/file`}
+          className="inline-flex items-center gap-1.5 font-medium text-info underline-offset-4 hover:underline"
+        >
+          <Download className="size-3.5" />
           {p.fileName}
         </a>{" "}
-        {p.isLate && <Badge variant="destructive">Late</Badge>}
+        {p.isLate && (
+          <Badge variant="destructive">
+            <Clock data-icon="inline-start" />
+            Late
+          </Badge>
+        )}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
@@ -96,6 +106,7 @@ export function MarksheetRow(p: Props) {
             disabled={busy}
           />
           <Button size="sm" disabled={!dirty || busy} onClick={onSave}>
+            <Save className="size-3.5" />
             Save
           </Button>
         </div>
@@ -109,11 +120,20 @@ export function MarksheetRow(p: Props) {
       <TableCell>{typed !== null && <ClassificationBadge classification={classify(typed)} />}</TableCell>
       <TableCell>
         {!p.grade ? (
-          <Badge variant="outline">Not graded</Badge>
+          <Badge variant="neutral">
+            <Hourglass data-icon="inline-start" />
+            Not graded
+          </Badge>
         ) : p.grade.isPublished ? (
-          <Badge>Published</Badge>
+          <Badge variant="success">
+            <Eye data-icon="inline-start" />
+            Published
+          </Badge>
         ) : (
-          <Badge variant="secondary">Withheld</Badge>
+          <Badge variant="warning">
+            <EyeOff data-icon="inline-start" />
+            Withheld
+          </Badge>
         )}
       </TableCell>
       <TableCell className="text-right">

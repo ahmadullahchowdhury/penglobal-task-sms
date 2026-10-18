@@ -1,4 +1,7 @@
+import { ChevronLeft, ChevronRight, Plus, Search, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +21,7 @@ import { statusLabel } from "@/lib/domain/status";
 import { academicYearLabel } from "@/lib/format";
 import { listStudents } from "@/lib/services/students";
 import { listStudentsQuerySchema } from "@/lib/validation/students";
+import { cn } from "@/lib/utils";
 
 export default async function StudentsPage({ searchParams }: PageProps<"/staff/students">) {
   await requirePageRole("REGISTRY_ADMIN");
@@ -50,28 +54,38 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
     return qs ? `/staff/students?${qs}` : "/staff/students";
   }
 
+  const addButton = (
+    <Link href="/staff/students/new" className={buttonVariants()}>
+      <Plus className="size-4" />
+      Add student
+    </Link>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Students</h1>
-        <Link href="/staff/students/new" className={buttonVariants()}>
-          Add student
-        </Link>
-      </div>
+      <PageHeader
+        title="Students"
+        description="Search, filter and manage every student on the register."
+        actions={addButton}
+      />
 
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="flex min-w-56 flex-1 flex-col gap-1 text-sm">
-          <span className="text-muted-foreground">Search</span>
-          <Input
-            type="search"
-            name="q"
-            defaultValue={query.q}
-            placeholder="Name, student ID or email"
-          />
+      <form method="get" className="surface flex flex-wrap items-end gap-3 p-4">
+        <label className="flex min-w-56 flex-1 flex-col gap-1.5 text-sm">
+          <span className="font-medium">Search</span>
+          <span className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              name="q"
+              defaultValue={query.q}
+              placeholder="Name, student ID or email"
+              className="h-9 pl-8"
+            />
+          </span>
         </label>
-        <label className="flex w-52 flex-col gap-1 text-sm">
-          <span className="text-muted-foreground">Programme</span>
-          <NativeSelect name="programmeId" defaultValue={query.programmeId ?? ""}>
+        <label className="flex w-52 flex-col gap-1.5 text-sm">
+          <span className="font-medium">Programme</span>
+          <NativeSelect name="programmeId" defaultValue={query.programmeId ?? ""} className="h-9">
             <option value="">All programmes</option>
             {programmes.map((p) => (
               <option key={p.id} value={p.id}>
@@ -80,9 +94,9 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
             ))}
           </NativeSelect>
         </label>
-        <label className="flex w-40 flex-col gap-1 text-sm">
-          <span className="text-muted-foreground">Status</span>
-          <NativeSelect name="status" defaultValue={query.status ?? ""}>
+        <label className="flex w-44 flex-col gap-1.5 text-sm">
+          <span className="font-medium">Status</span>
+          <NativeSelect name="status" defaultValue={query.status ?? ""} className="h-9">
             <option value="">All statuses</option>
             {Object.values(EnrolmentStatus).map((s) => (
               <option key={s} value={s}>
@@ -91,25 +105,43 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
             ))}
           </NativeSelect>
         </label>
-        <Button type="submit">Search</Button>
+        <Button type="submit" className="h-9">
+          <Search className="size-4" />
+          Search
+        </Button>
         {hasFilters && (
-          <Link href="/staff/students" className={buttonVariants({ variant: "ghost" })}>
+          <Link
+            href="/staff/students"
+            className={cn(buttonVariants({ variant: "ghost" }), "h-9")}
+          >
+            <X className="size-4" />
             Clear
           </Link>
         )}
       </form>
 
       {result.data.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="font-medium">
-            {hasFilters ? "No students match these filters" : "No students yet"}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {hasFilters
-              ? "Try a different search or clear the filters."
-              : "Add the first student to get started."}
-          </p>
-        </div>
+        <EmptyState
+          icon={hasFilters ? Search : Users}
+          title={hasFilters ? "No students match these filters" : "No students yet"}
+          description={
+            hasFilters
+              ? "Try a different search, or clear the filters to see everyone."
+              : "Add the first student to start the register."
+          }
+          action={
+            hasFilters ? (
+              <Link href="/staff/students" className={buttonVariants({ variant: "outline" })}>
+                Clear filters
+              </Link>
+            ) : (
+              <Link href="/staff/students/new" className={buttonVariants()}>
+                <UserPlus className="size-4" />
+                Add student
+              </Link>
+            )
+          }
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -125,15 +157,20 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
           <TableBody>
             {result.data.map((s) => (
               <TableRow key={s.id}>
-                <TableCell className="font-mono">
-                  <Link href={`/staff/students/${s.id}`} className="underline-offset-4 hover:underline">
+                <TableCell className="font-mono text-[0.8rem]">
+                  <Link
+                    href={`/staff/students/${s.id}`}
+                    className="font-medium text-info underline-offset-4 hover:underline"
+                  >
                     {s.studentNumber}
                   </Link>
                 </TableCell>
-                <TableCell>{s.fullName}</TableCell>
-                <TableCell className="text-muted-foreground">{s.email}</TableCell>
+                <TableCell className="font-medium">{s.fullName}</TableCell>
+                <TableCell className="max-w-56 truncate text-muted-foreground" title={s.email}>
+                  {s.email}
+                </TableCell>
                 <TableCell>{s.programme.code}</TableCell>
-                <TableCell>{academicYearLabel(s.academicYear)}</TableCell>
+                <TableCell className="tabular-nums">{academicYearLabel(s.academicYear)}</TableCell>
                 <TableCell>
                   <StatusBadge status={s.status} />
                 </TableCell>
@@ -146,26 +183,36 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
       {result.total > 0 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            {result.total} {result.total === 1 ? "student" : "students"}, page {result.page} of{" "}
+            {result.total} {result.total === 1 ? "student" : "students"} · page {result.page} of{" "}
             {result.totalPages}
           </span>
           <div className="flex gap-2">
             {result.page > 1 ? (
-              <Link href={pageHref(result.page - 1)} className={buttonVariants({ variant: "outline" })}>
+              <Link
+                href={pageHref(result.page - 1)}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                <ChevronLeft className="size-4" />
                 Previous
               </Link>
             ) : (
               <Button variant="outline" disabled>
+                <ChevronLeft className="size-4" />
                 Previous
               </Button>
             )}
             {result.page < result.totalPages ? (
-              <Link href={pageHref(result.page + 1)} className={buttonVariants({ variant: "outline" })}>
+              <Link
+                href={pageHref(result.page + 1)}
+                className={buttonVariants({ variant: "outline" })}
+              >
                 Next
+                <ChevronRight className="size-4" />
               </Link>
             ) : (
               <Button variant="outline" disabled>
                 Next
+                <ChevronRight className="size-4" />
               </Button>
             )}
           </div>
