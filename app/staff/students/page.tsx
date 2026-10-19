@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus, Search, UserPlus, Users, X } from "lucide-react";
+import Form from "next/form";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -69,7 +70,7 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
         actions={addButton}
       />
 
-      <form method="get" className="surface flex flex-wrap items-end gap-3 p-4">
+      <Form action="/staff/students" className="surface flex flex-wrap items-end gap-3 p-4">
         <label className="flex min-w-56 flex-1 flex-col gap-1.5 text-sm">
           <span className="font-medium">Search</span>
           <span className="relative">
@@ -118,7 +119,7 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
             Clear
           </Link>
         )}
-      </form>
+      </Form>
 
       {result.data.length === 0 ? (
         <EmptyState

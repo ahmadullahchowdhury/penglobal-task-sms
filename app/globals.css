@@ -137,6 +137,15 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 resets buttons to the default arrow, so restore the pointer on active ones. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
   /* Page titles: Montserrat at a heavier weight with tighter tracking. */
   h1,
   h2 {
