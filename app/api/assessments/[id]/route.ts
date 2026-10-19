@@ -6,7 +6,7 @@ import { updateAssessmentSchema } from "@/lib/validation/assessments";
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/assessments/[id]">) {
   try {
-    await requireRole("REGISTRY_ADMIN", "STAFF");
+    await requireRole("STAFF");
     const { id } = await ctx.params;
     const input = parseInput(updateAssessmentSchema, await readJson(request));
     return Response.json({ assessment: await updateAssessment(id, input) });

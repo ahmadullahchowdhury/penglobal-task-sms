@@ -2,10 +2,9 @@ import { PageHeader } from "@/components/page-header";
 import { CreateAssessmentForm } from "@/components/create-assessment-form";
 import { requirePageRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { STAFF_AREA_ROLES } from "@/lib/domain/roles";
 
 export default async function NewAssessmentPage() {
-  await requirePageRole(...STAFF_AREA_ROLES);
+  await requirePageRole("STAFF");
 
   const modules = await prisma.module.findMany({
     orderBy: { code: "asc" },

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function PublishAllButton({ assessmentId }: { assessmentId: string }) {
+export function PublishAllButton({ assessmentId, pending }: { assessmentId: string; pending: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function PublishAllButton({ assessmentId }: { assessmentId: string }) {
 
   return (
     <div className="flex items-center gap-3">
-      <Button onClick={run} disabled={busy}>
+      <Button onClick={run} disabled={busy || pending === 0}>
         {busy ? "Publishing…" : "Publish all graded"}
       </Button>
       {message && (

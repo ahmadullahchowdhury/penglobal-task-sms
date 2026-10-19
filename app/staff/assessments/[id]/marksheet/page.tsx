@@ -73,7 +73,7 @@ export default async function MarksheetPage({
         />
       )}
 
-      {rows.length > 0 && <PublishAllButton assessmentId={assessment.id} />}
+      {rows.length > 0 && <PublishAllButton assessmentId={assessment.id} pending={withheld} />}
 
       {(rows.length > 0 || notSubmitted.length > 0) && (
       <Table>

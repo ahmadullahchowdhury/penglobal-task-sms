@@ -13,7 +13,6 @@ function navFor(role: "REGISTRY_ADMIN" | "STAFF" | "STUDENT"): NavItem[] {
       return [
         { href: "/staff/dashboard", label: "Dashboard", icon: "dashboard" },
         { href: "/staff/students", label: "Students", icon: "students" },
-        { href: "/staff/assessments", label: "Assessments", icon: "assessments" },
       ];
     case "STAFF":
       return [

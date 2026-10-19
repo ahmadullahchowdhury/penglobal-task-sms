@@ -6,7 +6,7 @@ import { createAssessmentSchema, listAssessmentsQuerySchema } from "@/lib/valida
 
 export async function POST(request: Request) {
   try {
-    const user = await requireRole("REGISTRY_ADMIN", "STAFF");
+    const user = await requireRole("STAFF");
     const input = parseInput(createAssessmentSchema, await readJson(request));
     const assessment = await createAssessment(input, user.id);
     return Response.json({ assessment }, { status: 201 });
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    await requireRole("REGISTRY_ADMIN", "STAFF");
+    await requireRole("STAFF");
     const params = Object.fromEntries(
       [...new URL(request.url).searchParams].filter(([, v]) => v !== ""),
     );

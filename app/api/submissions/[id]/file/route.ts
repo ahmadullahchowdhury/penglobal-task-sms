@@ -5,7 +5,7 @@ import { getSubmissionFile } from "@/lib/services/submissions";
 // Files are only ever served here, after the role and ownership checks.
 export async function GET(_request: Request, ctx: RouteContext<"/api/submissions/[id]/file">) {
   try {
-    const user = await requireRole("REGISTRY_ADMIN", "STAFF", "STUDENT");
+    const user = await requireRole("STAFF", "STUDENT");
     const { id } = await ctx.params;
     const file = await getSubmissionFile(id, user);
 

@@ -16,11 +16,10 @@ import {
 } from "@/components/ui/table";
 import { requirePageRole } from "@/lib/auth";
 import { allowedAssessmentTransitions } from "@/lib/domain/assessment";
-import { STAFF_AREA_ROLES } from "@/lib/domain/roles";
 import { listAssessments } from "@/lib/services/assessments";
 
 export default async function AssessmentsPage() {
-  await requirePageRole(...STAFF_AREA_ROLES);
+  await requirePageRole("STAFF");
   const assessments = await listAssessments({});
 
   return (

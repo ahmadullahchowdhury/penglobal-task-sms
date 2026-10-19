@@ -17,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requirePageRole } from "@/lib/auth";
-import { STAFF_AREA_ROLES } from "@/lib/domain/roles";
 import { formatDuration, formatFileSize } from "@/lib/format";
 import { ApiError } from "@/lib/http";
 import { getAssessmentSubmissions } from "@/lib/services/submissions";
@@ -25,7 +24,7 @@ import { getAssessmentSubmissions } from "@/lib/services/submissions";
 export default async function AssessmentDetailPage({
   params,
 }: PageProps<"/staff/assessments/[id]">) {
-  const user = await requirePageRole(...STAFF_AREA_ROLES);
+  await requirePageRole("STAFF");
   const { id } = await params;
 
   const view = await getAssessmentSubmissions(id).catch((err) => {
@@ -49,15 +48,13 @@ export default async function AssessmentDetailPage({
         actions={
           <>
             <AssessmentStateBadge state={assessment.state} />
-            {user.role === "STAFF" && (
-              <Link
-                href={`/staff/assessments/${assessment.id}/marksheet`}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                <FileCheck className="size-4" />
-                Marksheet
-              </Link>
-            )}
+            <Link
+              href={`/staff/assessments/${assessment.id}/marksheet`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              <FileCheck className="size-4" />
+              Marksheet
+            </Link>
           </>
         }
       />

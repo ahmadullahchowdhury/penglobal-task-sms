@@ -111,7 +111,7 @@ export async function submitWork(studentId: string, assessmentId: string, file: 
   return submission;
 }
 
-// Staff may download any file. A student only their own, and anyone else's is "not found".
+// Academic staff may download any file. A student only their own, and anyone else's is "not found".
 export async function getSubmissionFile(submissionId: string, user: { id: string; role: Role }) {
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },

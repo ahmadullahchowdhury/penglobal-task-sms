@@ -142,7 +142,7 @@ Smaller choices the brief left open, now enforced by the code and covered by tes
 | Payment date | The form asks for the date the money was received, defaulting to today and not allowed in the future, because the Registry often records a transfer days after it arrives. An earlier day is stored as midday UTC on that day, and no date means the moment it is recorded. Reversals and the original stay in the ledger, and a reversal itself cannot be reversed. |
 | Reversal reason | Required, so the audit log always says why. |
 | Assessment states | Draft to Open to Closed only. Closed is final and cannot be edited. An assessment cannot be opened once its deadline has passed, so the deadline has to be moved first. |
-| Who grades | Academic staff only. Registry Admin cannot enter or publish grades. |
+| Who owns assessments | Academic staff only. Registry Admin has no Assessments area: it cannot create or edit assessments, grade or publish, or download submitted files. The Registry owns students and money, academic staff own the work and the marks. |
 | Uploads | PDF or DOCX up to 10 MB. The extension, the declared type and the file's first bytes must all agree, and the stored type comes from the validated file, not the client. |
 | Closed assessments | Students still see them (and their own submission), but cannot submit. Drafts are never visible to students. |
 | "Not submitted" lists | Enrolled students in the module's programme who have no submission. Deferred and withdrawn students cannot submit, so they are not listed. |
