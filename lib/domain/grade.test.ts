@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseScoreInput, planGradeUpdate } from "./grade";
+import { averageScore, parseScoreInput, planGradeUpdate } from "./grade";
 
 describe("parseScoreInput", () => {
   it.each([
@@ -44,5 +44,17 @@ describe("planGradeUpdate", () => {
       action: "update",
       withhold: true,
     });
+  });
+});
+
+describe("averageScore", () => {
+  it("is null with no scores", () => {
+    expect(averageScore([])).toBeNull();
+  });
+
+  it("rounds the mean to a whole number", () => {
+    expect(averageScore([40])).toBe(40);
+    expect(averageScore([66, 71])).toBe(69);
+    expect(averageScore([40, 59, 100])).toBe(66);
   });
 });

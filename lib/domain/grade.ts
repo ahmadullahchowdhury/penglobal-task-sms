@@ -23,3 +23,9 @@ export function planGradeUpdate(
   if (existing.score === newScore) return { action: "noop" };
   return { action: "update", withhold: existing.isPublished };
 }
+
+// Mean of the given scores rounded to a whole number, or null when there are none.
+export function averageScore(scores: readonly number[]): number | null {
+  if (scores.length === 0) return null;
+  return Math.round(scores.reduce((t, s) => t + s, 0) / scores.length);
+}
