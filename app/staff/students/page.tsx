@@ -1,8 +1,11 @@
 import { ChevronLeft, ChevronRight, Plus, Search, UserPlus, Users, X } from "lucide-react";
 import Form from "next/form";
 import Link from "next/link";
+import { Suspense } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { SearchButton } from "@/components/search-button";
+import { TableSkeleton } from "@/components/skeletons";
 import { StatusBadge } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +24,7 @@ import { prisma } from "@/lib/db";
 import { statusLabel } from "@/lib/domain/status";
 import { academicYearLabel } from "@/lib/format";
 import { listStudents } from "@/lib/services/students";
-import { listStudentsQuerySchema } from "@/lib/validation/students";
+import { type ListStudentsQuery, listStudentsQuerySchema } from "@/lib/validation/students";
 import { cn } from "@/lib/utils";
 
 export default async function StudentsPage({ searchParams }: PageProps<"/staff/students">) {
@@ -38,22 +41,7 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
   const parsed = listStudentsQuerySchema.safeParse(params);
   const query = parsed.success ? parsed.data : listStudentsQuerySchema.parse({});
 
-  const [result, programmes] = await Promise.all([
-    listStudents(query),
-    prisma.programme.findMany({ orderBy: { code: "asc" } }),
-  ]);
-
   const hasFilters = Boolean(query.q || query.programmeId || query.status);
-
-  function pageHref(page: number) {
-    const next = new URLSearchParams();
-    if (query.q) next.set("q", query.q);
-    if (query.programmeId) next.set("programmeId", query.programmeId);
-    if (query.status) next.set("status", query.status);
-    if (page > 1) next.set("page", String(page));
-    const qs = next.toString();
-    return qs ? `/staff/students?${qs}` : "/staff/students";
-  }
 
   const addButton = (
     <Link href="/staff/students/new" className={buttonVariants()}>
@@ -86,14 +74,15 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
         </label>
         <label className="flex w-52 flex-col gap-1.5 text-sm">
           <span className="font-medium">Programme</span>
-          <NativeSelect name="programmeId" defaultValue={query.programmeId ?? ""} className="h-9">
-            <option value="">All programmes</option>
-            {programmes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.code}
-              </option>
-            ))}
-          </NativeSelect>
+          <Suspense
+            fallback={
+              <NativeSelect name="programmeId" disabled className="h-9">
+                <option>Loading…</option>
+              </NativeSelect>
+            }
+          >
+            <ProgrammeSelect selected={query.programmeId} />
+          </Suspense>
         </label>
         <label className="flex w-44 flex-col gap-1.5 text-sm">
           <span className="font-medium">Status</span>
@@ -106,10 +95,7 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
             ))}
           </NativeSelect>
         </label>
-        <Button type="submit" className="h-9">
-          <Search className="size-4" />
-          Search
-        </Button>
+        <SearchButton>Search</SearchButton>
         {hasFilters && (
           <Link
             href="/staff/students"
@@ -121,104 +107,147 @@ export default async function StudentsPage({ searchParams }: PageProps<"/staff/s
         )}
       </Form>
 
-      {result.data.length === 0 ? (
-        <EmptyState
-          icon={hasFilters ? Search : Users}
-          title={hasFilters ? "No students match these filters" : "No students yet"}
-          description={
-            hasFilters
-              ? "Try a different search, or clear the filters to see everyone."
-              : "Add the first student to start the register."
-          }
-          action={
-            hasFilters ? (
-              <Link href="/staff/students" className={buttonVariants({ variant: "outline" })}>
-                Clear filters
-              </Link>
-            ) : (
-              <Link href="/staff/students/new" className={buttonVariants()}>
-                <UserPlus className="size-4" />
-                Add student
-              </Link>
-            )
-          }
-        />
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Student ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Programme</TableHead>
-              <TableHead>Year</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result.data.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-mono text-[0.8rem]">
-                  <Link
-                    href={`/staff/students/${s.id}`}
-                    className="font-medium text-info underline-offset-4 hover:underline"
-                  >
-                    {s.studentNumber}
-                  </Link>
-                </TableCell>
-                <TableCell className="font-medium">{s.fullName}</TableCell>
-                <TableCell className="max-w-56 truncate text-muted-foreground" title={s.email}>
-                  {s.email}
-                </TableCell>
-                <TableCell>{s.programme.code}</TableCell>
-                <TableCell className="tabular-nums">{academicYearLabel(s.academicYear)}</TableCell>
-                <TableCell>
-                  <StatusBadge status={s.status} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {result.total > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {result.total} {result.total === 1 ? "student" : "students"} · page {result.page} of{" "}
-            {result.totalPages}
-          </span>
-          <div className="flex gap-2">
-            {result.page > 1 ? (
-              <Link
-                href={pageHref(result.page - 1)}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                <ChevronLeft className="size-4" />
-                Previous
-              </Link>
-            ) : (
-              <Button variant="outline" disabled>
-                <ChevronLeft className="size-4" />
-                Previous
-              </Button>
-            )}
-            {result.page < result.totalPages ? (
-              <Link
-                href={pageHref(result.page + 1)}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                Next
-                <ChevronRight className="size-4" />
-              </Link>
-            ) : (
-              <Button variant="outline" disabled>
-                Next
-                <ChevronRight className="size-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Keyed on the filters so a new search shows a loader in place of the table. */}
+      <Suspense key={JSON.stringify(query)} fallback={<TableSkeleton />}>
+        <StudentResults query={query} hasFilters={hasFilters} />
+      </Suspense>
     </div>
+  );
+}
+
+async function ProgrammeSelect({ selected }: { selected?: string }) {
+  const programmes = await prisma.programme.findMany({ orderBy: { code: "asc" } });
+  return (
+    <NativeSelect name="programmeId" defaultValue={selected ?? ""} className="h-9">
+      <option value="">All programmes</option>
+      {programmes.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.code}
+        </option>
+      ))}
+    </NativeSelect>
+  );
+}
+
+async function StudentResults({
+  query,
+  hasFilters,
+}: {
+  query: ListStudentsQuery;
+  hasFilters: boolean;
+}) {
+  const result = await listStudents(query);
+
+  function pageHref(page: number) {
+    const next = new URLSearchParams();
+    if (query.q) next.set("q", query.q);
+    if (query.programmeId) next.set("programmeId", query.programmeId);
+    if (query.status) next.set("status", query.status);
+    if (page > 1) next.set("page", String(page));
+    const qs = next.toString();
+    return qs ? `/staff/students?${qs}` : "/staff/students";
+  }
+
+  return (
+    <>
+  {result.data.length === 0 ? (
+    <EmptyState
+      icon={hasFilters ? Search : Users}
+      title={hasFilters ? "No students match these filters" : "No students yet"}
+      description={
+        hasFilters
+          ? "Try a different search, or clear the filters to see everyone."
+          : "Add the first student to start the register."
+      }
+      action={
+        hasFilters ? (
+          <Link href="/staff/students" className={buttonVariants({ variant: "outline" })}>
+            Clear filters
+          </Link>
+        ) : (
+          <Link href="/staff/students/new" className={buttonVariants()}>
+            <UserPlus className="size-4" />
+            Add student
+          </Link>
+        )
+      }
+    />
+  ) : (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Student ID</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Programme</TableHead>
+          <TableHead>Year</TableHead>
+          <TableHead>Status</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {result.data.map((s) => (
+          <TableRow key={s.id}>
+            <TableCell className="font-mono text-[0.8rem]">
+              <Link
+                href={`/staff/students/${s.id}`}
+                className="font-medium text-info underline-offset-4 hover:underline"
+              >
+                {s.studentNumber}
+              </Link>
+            </TableCell>
+            <TableCell className="font-medium">{s.fullName}</TableCell>
+            <TableCell className="max-w-56 truncate text-muted-foreground" title={s.email}>
+              {s.email}
+            </TableCell>
+            <TableCell>{s.programme.code}</TableCell>
+            <TableCell className="tabular-nums">{academicYearLabel(s.academicYear)}</TableCell>
+            <TableCell>
+              <StatusBadge status={s.status} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )}
+
+  {result.total > 0 && (
+    <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <span>
+        {result.total} {result.total === 1 ? "student" : "students"} · page {result.page} of{" "}
+        {result.totalPages}
+      </span>
+      <div className="flex gap-2">
+        {result.page > 1 ? (
+          <Link
+            href={pageHref(result.page - 1)}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <ChevronLeft className="size-4" />
+            Previous
+          </Link>
+        ) : (
+          <Button variant="outline" disabled>
+            <ChevronLeft className="size-4" />
+            Previous
+          </Button>
+        )}
+        {result.page < result.totalPages ? (
+          <Link
+            href={pageHref(result.page + 1)}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Next
+            <ChevronRight className="size-4" />
+          </Link>
+        ) : (
+          <Button variant="outline" disabled>
+            Next
+            <ChevronRight className="size-4" />
+          </Button>
+        )}
+      </div>
+    </div>
+  )}
+    </>
   );
 }
