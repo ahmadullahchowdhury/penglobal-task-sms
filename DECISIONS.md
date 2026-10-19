@@ -108,7 +108,10 @@ The full schema is in `prisma/schema.prisma`. The choices that matter:
 
 ## 8. Role separation
 
-Auth is optional in the brief, so I use a role switcher backed by a cookie that selects a seeded Staff user or a specific seeded Student. Every API route reads the role from the cookie on the server and checks it before doing anything, so hiding a button in the UI is never the only protection. This is a stand-in for real authentication, not a security feature. In production I would replace it with a proper auth provider and session, and the same server-side checks would carry over.
+Auth is optional in the brief, so I use a role switcher backed by a cookie that selects a seeded Registry Admin, Staff user or Student. Every API route reads the role from the cookie on the server and checks it before doing anything, so hiding a button in the UI is never the only protection. This is a stand-in for real authentication, not a security feature. In production I would replace it with a proper auth provider and session, and the same server-side checks would carry over.
+
+- **The switcher is always on.** It has no environment flag to turn it off, because this is a demo and the app has no other way to sign in. Anyone who opens a deployment can act as any seeded user, so a deployment must never hold real data. A yellow "Demo mode" badge says so on every page.
+- **Students created in the app have no login.** Enrolment creates the student record, history and fee charge, but no user account, so a new student cannot be viewed as from the menu. Only the seeded students can. Real authentication would create the login at enrolment or invite.
 
 ## 9. Deliberately out of scope
 
@@ -117,7 +120,7 @@ Auth is optional in the brief, so I use a role switcher backed by a cookie that 
 - Multi-currency and instalment plan UI
 - Submission version history (only the latest file is kept before the deadline)
 - Plagiarism checks, marking rubrics, moderation workflows
-- Cloud file storage (files are stored locally here, and object storage such as S3 is the production path)
+- Cloud file storage (files are stored on local disk, or in the temp folder on Vercel, which is per instance and not durable. Object storage such as S3 or Vercel Blob is the production path)
 
 ## 10. What I would do next
 

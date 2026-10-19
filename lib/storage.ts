@@ -1,10 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 // Uploaded files live outside the app's public folder and are only ever served
 // through an authorised route. Names are generated here, never taken from users.
-const uploadDir = () => path.resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.UPLOAD_DIR ?? "uploads");
+//
+// Locally that is ./uploads. Vercel's deployment folder is read-only, so there it is the
+// temp folder, which is per instance and not durable: fine for a demo, not for real use.
+// UPLOAD_DIR is an optional override (the tests point it at a temp folder).
+const uploadDir = () =>
+  process.env.UPLOAD_DIR ??
+  (process.env.VERCEL
+    ? path.join(os.tmpdir(), "uploads")
+    : path.resolve(/*turbopackIgnore: true*/ process.cwd(), "uploads"));
 
 const KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|docx)$/;
 

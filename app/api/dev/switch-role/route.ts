@@ -9,10 +9,6 @@ const bodySchema = z.object({ userId: z.string().min(1) });
 
 export async function POST(request: Request) {
   try {
-    if (process.env.DEMO_ROLE_SWITCHER !== "true") {
-      throw new ApiError(404, "NOT_FOUND", "Not found");
-    }
-
     const { userId } = parseInput(bodySchema, await readJson(request));
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new ApiError(404, "NOT_FOUND", "User not found");

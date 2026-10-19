@@ -39,11 +39,7 @@ const initials = (name: string) =>
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
-  const switcherEnabled = process.env.DEMO_ROLE_SWITCHER === "true";
-
-  const users = switcherEnabled
-    ? await prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }] })
-    : [];
+  const users = await prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }] });
 
   return (
     <div className="md:flex md:min-h-screen">
@@ -67,24 +63,20 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card/90 px-4 py-2.5 backdrop-blur md:px-8">
           <div className="min-h-8">
-            {switcherEnabled && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/15 px-3 py-1 text-xs font-medium text-[oklch(0.42_0.09_65)]">
-                <Info className="size-3.5 shrink-0" />
-                Demo mode: role switcher stands in for real authentication
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/15 px-3 py-1 text-xs font-medium text-[oklch(0.42_0.09_65)]">
+              <Info className="size-3.5 shrink-0" />
+              Demo mode: role switcher stands in for real authentication
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {switcherEnabled && (
-              <RoleSwitcher
-                currentUserId={user?.id ?? null}
-                users={users.map((u) => ({
-                  id: u.id,
-                  name: u.name,
-                  roleLabel: ROLE_LABELS[u.role],
-                }))}
-              />
-            )}
+            <RoleSwitcher
+              currentUserId={user?.id ?? null}
+              users={users.map((u) => ({
+                id: u.id,
+                name: u.name,
+                roleLabel: ROLE_LABELS[u.role],
+              }))}
+            />
             {user && (
               <Link
                 href={homePathFor(user.role)}

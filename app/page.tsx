@@ -10,23 +10,16 @@ export default async function Home() {
   const user = await getCurrentUser();
   if (user) redirect(homePathFor(user.role));
 
-  const switcherEnabled = process.env.DEMO_ROLE_SWITCHER === "true";
-  const users = switcherEnabled
-    ? await prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }] })
-    : [];
+  const users = await prisma.user.findMany({ orderBy: [{ role: "asc" }, { name: "asc" }] });
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Registry"
-        description={
-          switcherEnabled
-            ? 'Pick who to view the app as. You can change it any time from the "Viewing as" menu.'
-            : "Sign in to continue."
-        }
+        description='Pick who to view the app as. You can change it any time from the "Viewing as" menu.'
       />
 
-      {switcherEnabled && users.length === 0 && (
+      {users.length === 0 && (
         <div className="surface flex items-center gap-3 p-5 text-sm text-muted-foreground">
           <GraduationCap className="size-5" />
           No users yet. Run <code className="rounded bg-muted px-1.5 py-0.5">npm run db:seed</code> to

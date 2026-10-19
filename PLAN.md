@@ -57,9 +57,8 @@ Conventions:
 - Prisma 7 with the PostgreSQL driver adapter, `prisma.config.ts`, and explicit npm scripts: `db:generate`, `db:migrate`, `db:seed`, `db:reset`
 - `.env.example`, `.gitignore` (including `uploads` and `generated/prisma`), and `CLAUDE.md`
 - `DECISIONS.md`, `PLAN.md` and `prisma/schema.prisma` in place
-- Optional `docker-compose.yml`
 
-**Done when:** `npm run dev` shows the default page, Postgres is reachable through `DATABASE_URL` (local install, Docker, or a hosted free tier), `npx prisma validate` passes, and `.env` is ignored.
+**Done when:** `npm run dev` shows the default page, Postgres is reachable through `DATABASE_URL` (local install or a hosted free tier), `npx prisma validate` passes, and `.env` is ignored.
 
 ---
 
@@ -83,7 +82,7 @@ Conventions:
 
 **Scope:**
 - Minimal seed: one Registry Admin, one Staff user, 2 programmes, modules
-- "Viewing as" dropdown that sets an httpOnly cookie, with a demo mode badge, shown only when `DEMO_ROLE_SWITCHER=true`
+- "Viewing as" dropdown that sets an httpOnly cookie, with a demo mode badge
 - `getCurrentUser()` and `requireRole()` helpers used on the server
 - `/staff/*` and `/student/*` route groups with redirects for the wrong role
 - A small test or script proving a student gets 403 from a staff API route

@@ -4,7 +4,7 @@ Deploys the app with a Neon PostgreSQL database and Vercel hosting. About 15 min
 
 > **Read this first: uploads.** `lib/storage.ts` writes submissions to local disk. Vercel's
 > filesystem is read-only except `/tmp`, and `/tmp` is temporary and not shared between
-> serverless instances. Section 5 covers a demo workaround and the real fix.
+> serverless instances. The app already uses `/tmp` on Vercel, so no setting is needed. Section 5 explains the limits and the real fix.
 
 ## What you need
 
@@ -70,8 +70,6 @@ In **Settings > Environment Variables** (or on the import screen), for Productio
 | Name | Value | Notes |
 |---|---|---|
 | `DATABASE_URL` | the **pooled** Neon string | Required. Needed at build time too, because `prisma.config.ts` reads it during `prisma generate`. |
-| `DEMO_ROLE_SWITCHER` | `true` | The role switcher is the only way to sign in, so the demo needs it. It is **not authentication**, so do not put real data behind it. |
-| `UPLOAD_DIR` | `/tmp/uploads` | Demo workaround, see section 5. |
 
 Do not commit `.env`. Keep `.env.example` current if you add variables.
 
@@ -79,10 +77,9 @@ Then click **Deploy**.
 
 ## 5. File uploads on Vercel
 
-The app saves student submissions with `writeFile` into `UPLOAD_DIR`, resolved from the project root.
+The app saves student submissions with `writeFile`. Locally that is `./uploads`. Vercel sets the `VERCEL` environment variable on every deployment, and when it is present `lib/storage.ts` writes to the temp folder instead, because the deployment directory is read-only. No setting is needed.
 
-- **Default (`uploads`)**: the deployment directory is read-only, so every submission fails with a server error.
-- **Demo workaround (`UPLOAD_DIR=/tmp/uploads`)**: an absolute path wins over the project root, so writes succeed. But `/tmp` is per instance and cleared when the instance is recycled. A submission can upload fine and later return "file not found" when staff open it from another instance. Fine for a short walkthrough, not for real use.
+- **What this means on Vercel**: `/tmp` is per instance and cleared when the instance is recycled. A submission can upload fine and later return "file not found" when staff open it from another instance. Fine for a short walkthrough, not for real use.
 - **The real fix**: replace the three functions in `lib/storage.ts` (`saveUpload`, `readUpload`, `deleteUpload`) with an object store such as Vercel Blob or S3, keeping the generated-key scheme and the authorised download route. Files must stay private and be served only through `app/api/submissions/[id]/file/route.ts`. The rest of the app does not need to change. This is a feature change, so it is not part of this guide.
 
 ## 6. Verify
@@ -108,5 +105,4 @@ The app saves student submissions with `writeFile` into `UPLOAD_DIR`, resolved f
 | `migrate deploy` hangs or fails to connect | Using the pooled string, or `sslmode=require` is missing. Use the direct string. |
 | First request after idle is slow (1 to 3 s) | Neon free tier suspends idle compute and wakes on the next query. Normal. |
 | `too many connections` | The app is using the direct string. Switch `DATABASE_URL` in Vercel to the pooled one. |
-| Submission upload returns 500 | `UPLOAD_DIR` still points inside the project. See section 5. |
-| "Viewing as" menu missing | `DEMO_ROLE_SWITCHER` is not exactly `true`. |
+| Submission upload returns 500 | Check the function logs. Uploads should use `/tmp` on Vercel (section 5). |
