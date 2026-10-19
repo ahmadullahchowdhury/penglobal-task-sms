@@ -1,4 +1,4 @@
-import { BookOpen, CalendarCheck, Cake, GraduationCap, History, Mail, UserRound, Wallet } from "lucide-react";
+import { BookOpen, CalendarCheck, Cake, GraduationCap, History, Mail } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { FeesView } from "@/components/fees-view";
@@ -41,8 +41,8 @@ export default async function StudentDetailPage({
   const activeTab = tab === "fees" ? "fees" : "details";
 
   const tabs = [
-    { key: "details", label: "Details", href: `/staff/students/${id}`, Icon: UserRound },
-    { key: "fees", label: "Fees", href: `/staff/students/${id}?tab=fees`, Icon: Wallet },
+    { key: "details", label: "Details", href: `/staff/students/${id}`, icon: "details" },
+    { key: "fees", label: "Fees", href: `/staff/students/${id}?tab=fees`, icon: "fees" },
   ] as const;
 
   // The header and each tab load on their own, so switching tabs only replaces the

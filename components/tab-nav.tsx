@@ -1,15 +1,19 @@
 "use client";
 
-import { Loader2, type LucideIcon } from "lucide-react";
+import { Loader2, UserRound, Wallet, type LucideIcon } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import { cn } from "@/lib/utils";
 
 const ICON_CLASS = "size-4";
 
+// Icons are passed by name: a component cannot cross from a server page into this client one.
+const ICONS = { details: UserRound, fees: Wallet } satisfies Record<string, LucideIcon>;
+
 // Swaps the tab's icon for a spinner while its navigation is in flight, so a
 // click gives feedback even before the server has answered.
-function TabIcon({ Icon }: { Icon: LucideIcon }) {
+function TabIcon({ icon }: { icon: keyof typeof ICONS }) {
   const { pending } = useLinkStatus();
+  const Icon = ICONS[icon];
   return pending ? (
     <Loader2 aria-hidden className={cn(ICON_CLASS, "animate-spin")} />
   ) : (
@@ -17,12 +21,12 @@ function TabIcon({ Icon }: { Icon: LucideIcon }) {
   );
 }
 
-export type Tab = { key: string; label: string; href: string; Icon: LucideIcon };
+export type Tab = { key: string; label: string; href: string; icon: keyof typeof ICONS };
 
 export function TabNav({ tabs, active }: { tabs: readonly Tab[]; active: string }) {
   return (
     <nav className="flex gap-1 border-b border-border">
-      {tabs.map(({ key, label, href, Icon }) => (
+      {tabs.map(({ key, label, href, icon }) => (
         <Link
           key={key}
           href={href}
@@ -34,7 +38,7 @@ export function TabNav({ tabs, active }: { tabs: readonly Tab[]; active: string 
               : "border-transparent text-muted-foreground hover:border-input hover:text-foreground",
           )}
         >
-          <TabIcon Icon={Icon} />
+          <TabIcon icon={icon} />
           {label}
         </Link>
       ))}
